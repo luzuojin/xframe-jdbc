@@ -1,10 +1,10 @@
-###xframe-jdbc
+### xframe-jdbc
 ```
 * jdbctemplate
 * typequery (type & table binding)
 * sqlscript (tools)
 ```
-####setup
+#### setup
 ```java
 JdbcEnviron.getConfigurator()
 	.setFieldMapper(mapper)
@@ -17,7 +17,7 @@ JdbcEnviron.getConfigurator()
 //default supported jdbc pool
 dataSource = DataSources.tomcatjdbc(dbconf)
 ```
-####usage
+#### usage
 ```java
 TypeQuery<T> query = TypeQuery.newBuilder(T.class)
 							.setTable(dbkey, tableName)
@@ -37,7 +37,8 @@ query.update(T)
 query.insert(T)
 query.instup(T) 	(insert on duplicate key update)
 ```
-```tools
+#### tools
+```
 SQLDiff.diff(base_dbconf, curr_dbconf)
 SQLScript.parse(File/Text)
 ```
