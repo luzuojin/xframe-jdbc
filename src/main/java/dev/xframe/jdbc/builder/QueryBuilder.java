@@ -1,0 +1,151 @@
+package dev.xframe.jdbc.builder;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
+import dev.xframe.jdbc.JdbcEnviron;
+import dev.xframe.jdbc.JdbcTemplate;
+import dev.xframe.jdbc.TypeHandler;
+import dev.xframe.jdbc.TypeQuery;
+import dev.xframe.jdbc.TypeQuery.SQLSetter;
+import dev.xframe.jdbc.builder.analyse.Analyzer;
+import dev.xframe.jdbc.builder.analyse.FTable;
+import dev.xframe.jdbc.codec.FieldCodec;
+import dev.xframe.jdbc.codec.FieldCodecs;
+import dev.xframe.jdbc.sequal.SQL;
+import dev.xframe.jdbc.sequal.SQLFactory;
+import dev.xframe.jdbc.sql.TypeSQL;
+
+public class QueryBuilder<T> {
+	
+	private Class<T> type;
+	
+	private Object dbKey;
+	
+	private String tableName;
+	
+	private TypeHandler<T> typeHandler;
+	
+	//field name or class name
+	private FieldCodecs fieldCodecs = new FieldCodecs();
+	
+	private Map<String, String> fieldMapper = new HashMap<>();
+
+	private int asyncModel = -1;
+	
+	private int instupUsage = -1;
+	
+	private int ignore = 0;
+	
+	private TypeSQL[] tsqls = new TypeSQL[0];
+
+	public QueryBuilder(Class<T> clazz) {
+		this.type = clazz;
+	}
+	
+	public QueryBuilder<T> setTable(Object dbKey, String tableName) {
+		this.dbKey = dbKey;
+		this.tableName = tableName;
+		return this;
+	}
+	
+	public QueryBuilder<T> setTypeHandler(TypeHandler<T> typeHandler) {
+		this.typeHandler = typeHandler;
+		return this;
+	}
+	
+	public QueryBuilder<T> setFieldCodec(String fieldName, FieldCodec<?, ?> fieldCodec) {
+		this.fieldCodecs.add(fieldName, fieldCodec);
+		return this;
+	}
+	
+	public QueryBuilder<T> setFieldCodec(Class<?> fieldType, FieldCodec<?, ?> fieldCodec) {
+		this.fieldCodecs.add(fieldType, fieldCodec);
+		return this;
+	}
+	
+	public QueryBuilder<T> setSQL(int index, TypeSQL tsql) {
+		int nl = Math.max(index, tsqls.length) + 1;
+        tsqls = Arrays.copyOf(tsqls, nl);
+        tsqls[index] = tsql;
+		return this;
+	}
+	
+	public QueryBuilder<T> setAsyncModel(boolean asyncModel) {
+		this.asyncModel = asyncModel ? 1 : 0;
+		return this;
+	}
+	
+	/**
+	 * 1 << 0	insert
+	 * 1 << 1	instup
+	 * 1 << 2	update
+	 * 1 << 3	delete
+	 * 1 << 4	qrykey
+	 * 1 << 5	qryall
+	 * 
+	 * 0xFF		ingoreall
+	 * @param ignore
+	 * @return
+	 */
+	public QueryBuilder<T> setIgnore(int ignore) {
+		this.ignore = ignore;
+		return this;
+	}
+	
+	public QueryBuilder<T> setInstupUsage(boolean insert, boolean update) {
+		this.instupUsage = 0;
+		this.instupUsage += (insert ? 1 : 0);
+		this.instupUsage += (update ? 2 : 0);
+		return this;
+	}
+	
+	private int getInstupUsage() {
+		return this.instupUsage == -1 ? JdbcEnviron.getInstupUsage() : this.instupUsage;
+	}
+	
+	public TypeQuery<T> build() {
+		try {
+			JdbcTemplate jdbcTemplate = JdbcEnviron.getJdbcTemplate(dbKey);
+			
+			FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMapper, fieldCodecs);
+			ftable.codecs.setTypeHandler(typeHandler);
+			
+			TypeQuery<T> query = new TypeQuery<>();
+			SQLSetter<T> setter = new SQLSetter<>();
+			
+			SQLFactory<T> factory = new SQLFactory<>(isAsyncModel(), jdbcTemplate);
+			
+			SQL<T> instup = SQLBuilder.buildInstupSQL(factory, ftable);
+			if((ignore & (1 << 0)) == 0)
+				setter.setInsert(query, (getInstupUsage() & 1) > 0 ? instup : SQLBuilder.buildInsertSQL(factory, ftable));
+			if((ignore & (1 << 1)) == 0)
+				setter.setInstup(query, instup);
+			if((ignore & (1 << 2)) == 0)
+				setter.setUpdate(query, (getInstupUsage() & 2) > 1 ? instup : SQLBuilder.buildUpdateSQL(factory, ftable));
+			if((ignore & (1 << 3)) == 0)
+				setter.setDelete(query, SQLBuilder.buildDeleteSQL(factory, ftable));
+			if((ignore & (1 << 4)) == 0)
+				setter.setQryKey(query, SQLBuilder.buildQryKeySQL(factory, ftable));
+			if((ignore & (1 << 5)) == 0)
+				setter.setQryAll(query, SQLBuilder.buildQuerySQL(factory, ftable));
+			
+			@SuppressWarnings("unchecked")
+			SQL<T>[] xtsqls = new SQL[tsqls.length];
+			for (int i = 0; i < this.tsqls.length; i++) {
+				if(tsqls[i] != null) {
+					xtsqls[i] = tsqls[i].buildSQL(factory, ftable);
+				}
+			}
+			setter.setTSqls(query, xtsqls);
+			
+			return query;
+		} catch (Throwable e) {throw new RuntimeException(e);}
+	}
+
+	private boolean isAsyncModel() {
+		return JdbcEnviron.isAsyncModel() && (asyncModel == 1 || asyncModel == -1);
+	}
+
+}
