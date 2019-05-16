@@ -97,6 +97,7 @@ public abstract class ArrayCodec<T> implements FieldCodec<T, String>, ElementCod
         
         @Override
         public String encode(T fieldValue) {
+        	if(fieldValue == null) return "";
             int len = Array.getLength(fieldValue);
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < len; i++) {
