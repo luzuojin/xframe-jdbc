@@ -207,6 +207,9 @@ public class JdbcTemplate {
         } catch (SQLException e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
             return e.getErrorCode();
+        } catch (Exception e) {
+        	logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
+        	return -2;
         } finally {
             close(conn, pstmt);
             watch(first, second, sql);
