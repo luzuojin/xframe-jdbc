@@ -1,7 +1,6 @@
 package dev.xframe.jdbc;
 
 import java.sql.ResultSet;
-import java.sql.SQLException;
 
 
 /**
@@ -11,6 +10,6 @@ import java.sql.SQLException;
  */
 public interface RSParser<T> {
 	
-	T parse(ResultSet rs) throws SQLException;
+	T parse(ResultSet rs) throws Exception;
 	
 }

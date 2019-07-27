@@ -1,4 +1,4 @@
-package dev.xframe.jdbc.builder;
+package dev.xframe.jdbc.builder.javassist;
 
 import java.io.InputStream;
 import java.io.Reader;
@@ -17,7 +17,7 @@ import dev.xframe.jdbc.builder.analyse.JColumn;
  * getter setter 解析
  * @author luzj
  */
-class TypeCodes {
+class FieldCodes {
 	
     static String specsName(String name) {
         char first = name.charAt(0);
@@ -57,7 +57,7 @@ class TypeCodes {
 	static <T> String columnSetVal(FCodecs codecs, String type, JColumn jColumn) {
 	    String val = fieldGetVal(type, jColumn);
 	    if(codecs.hasCodec(jColumn.name)) {//pstmt.setInt(1, (int)this.xxxCodec.encode((Integer)this.getXxx()))
-	        return objToPrimitiveCasting(codecs.findColumnTypeFromCodec(jColumn.name), String.format("this.%s.encode(%s)", CodeBuilder.codecFieldName(jColumn.name), primitiveToObjCasting(jColumn.type, val)));
+	        return objToPrimitiveCasting(codecs.findColumnTypeFromCodec(jColumn.name), String.format("this.%s.encode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObjCasting(jColumn.type, val)));
 	    }
 	    return objToPrimitiveCasting(jColumn.type, val);//pstmt.set(1, (int)this.getXxx())
 	}
@@ -143,7 +143,7 @@ class TypeCodes {
 	static <T> String fieldSetVal(FCodecs codecs, String rs, JColumn jColumn, int index) {
 		String rsget = new StringBuilder().append(rs).append(".").append(rsGetter(codecs, jColumn)).append("(").append(index).append(")").toString();//rs.getInt(1)
 		if(codecs.hasCodec(jColumn.name)) {//(int) this.xxxCodec.decode((Integer)rs.getInt(1));
-			return objToPrimitive(jColumn.type, String.format("this.%s.decode(%s)", CodeBuilder.codecFieldName(jColumn.name), primitiveToObj(codecs.findColumnTypeFromCodec(jColumn.name), rsget)));
+			return objToPrimitive(jColumn.type, String.format("this.%s.decode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObj(codecs.findColumnTypeFromCodec(jColumn.name), rsget)));
 		}
 		return primitiveToObj(jColumn.type, rsget);//(Integer) rs.getInt(1);
 	}

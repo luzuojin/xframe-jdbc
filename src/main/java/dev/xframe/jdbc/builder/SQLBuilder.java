@@ -28,7 +28,7 @@ public class SQLBuilder {
 	}
     
     public static <T> SQL<T> buildInsertSQL(SQLFactory<T> factory, FTable ftable) throws Exception {
-        return factory.newSQL(Option.INSERT, buildInsertSQLStr(ftable), ftable.batchLimit(ftable.columns.size()), CodeBuilder.makeSetter(ftable, ftable.columns), null);
+        return factory.newSQL(Option.INSERT, buildInsertSQLStr(ftable), ftable.batchLimit(ftable.columns.size()), CodecBuilder.buildSetter(ftable, ftable.columns), null);
     }
 
 	private static String buildInsertSQLStr(FTable ftable) {
@@ -41,7 +41,7 @@ public class SQLBuilder {
         if(ftable.hasOnlyOneUniqueIndex() && ftable.hasColumnNotInUniqueIndex()) {
             String upt = join(",", ftable.columns.stream().filter(f->!ftable.primaryKeys.contains(f)).map(f->f.dbColumn.quoteName()+"=VALUES("+f.dbColumn.quoteName()+")"));
             String sql = buildInsertSQLStr(ftable) + " ON DUPLICATE KEY UPDATE " + upt;
-            return factory.newSQL(Option.INSTUP, sql.toString(), ftable.batchLimit(ftable.columns.size()), CodeBuilder.makeSetter(ftable, ftable.columns), null);
+            return factory.newSQL(Option.INSTUP, sql.toString(), ftable.batchLimit(ftable.columns.size()), CodecBuilder.buildSetter(ftable, ftable.columns), null);
         }
         return new NopeSQL<>(String.format("Table[%s] unique index is empty or not only", ftable.tableName));
     }
@@ -56,7 +56,7 @@ public class SQLBuilder {
             
             String sql = "UPDATE " + ftable.tableName + " SET " + up + " WHERE " + we;
             
-            return factory.newSQL(Option.UPDATE, sql, ftable.batchLimit(ftable.columns.size() + whereColumns.size()), CodeBuilder.makeSetter(ftable, fColumns), null);
+            return factory.newSQL(Option.UPDATE, sql, ftable.batchLimit(ftable.columns.size() + whereColumns.size()), CodecBuilder.buildSetter(ftable, fColumns), null);
         }
         return new NopeSQL<>(String.format("Table[%s] update option where columns is empty", ftable.tableName));
     }
@@ -77,7 +77,7 @@ public class SQLBuilder {
 	}
     public static <T> SQL<T> buildDeleteSQL(SQLFactory<T> factory, FTable ftable, List<FColumn> whereColumns, BiFunction<FTable, List<FColumn>, String> nativeSQLBuilder) throws Exception {
     	if(!whereColumns.isEmpty()) {
-            return factory.newSQL(Option.DELETE, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), CodeBuilder.makeSetter(ftable, whereColumns), null);
+            return factory.newSQL(Option.DELETE, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), CodecBuilder.buildSetter(ftable, whereColumns), null);
         }
         return new NopeSQL<>(String.format("Table[%s] delete option where columns is empty", ftable.tableName));
     }
@@ -108,7 +108,7 @@ public class SQLBuilder {
     }
     
     public static <T> SQL<T> buildQuerySQL(SQLFactory<T> factory, FTable ftable, List<FColumn> whereColumns, BiFunction<FTable, List<FColumn>, String> nativeSQLBuilder) throws Exception {
-    	return factory.newSQL(Option.SELECT, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), null, CodeBuilder.makeParser(ftable, ftable.columns));
+    	return factory.newSQL(Option.SELECT, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), null, CodecBuilder.buildParser(ftable, ftable.columns));
     }
 
 }

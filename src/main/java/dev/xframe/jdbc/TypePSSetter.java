@@ -1,7 +1,6 @@
 package dev.xframe.jdbc;
 
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 
 /**
  * PreparedStatement setter with obj
@@ -9,6 +8,6 @@ import java.sql.SQLException;
  */
 public interface TypePSSetter<T> {
 
-	void set(PreparedStatement pstmt, T obj) throws SQLException;
+	void set(PreparedStatement pstmt, T obj) throws Exception;
 	
 }

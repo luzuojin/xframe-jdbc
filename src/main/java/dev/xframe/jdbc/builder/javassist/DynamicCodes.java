@@ -1,4 +1,4 @@
-package dev.xframe.jdbc.builder;
+package dev.xframe.jdbc.builder.javassist;
 
 import java.util.List;
 import java.util.Map;
@@ -19,15 +19,20 @@ import javassist.CtField;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
 
+
+/**
+ * generate dynamic code 
+ * @author luzj
+ */
 @SuppressWarnings("unchecked")
-public class CodeBuilder {
+public class DynamicCodes {
 	
 	private static AtomicInteger suffix = new AtomicInteger(0);
     private static String suffix(boolean full) {
         return full ? "F" : String.valueOf(suffix.incrementAndGet());
     }
     
-    static <T> RSParser<T> makeParser(FTable ftable, List<FColumn> columns) throws Exception {
+    public static <T> RSParser<T> makeParser(FTable ftable, List<FColumn> columns) throws Exception {
     	if(columns.isEmpty()) return null;
     	String clazzName = ftable.clazz.getName();
     	String newName = clazzName + "$TypeRSParser_" + (suffix(ftable.columns == columns));
@@ -50,7 +55,7 @@ public class CodeBuilder {
     		
     		int index = 1;
     		for (FColumn fColumn : columns) {
-    			body.append(TypeCodes.makeParserBodyElement(ftable.codecs, fColumn, "_tmp_", "$1", index));
+    			body.append(FieldCodes.makeParserBodyElement(ftable.codecs, fColumn, "_tmp_", "$1", index));
     			++index;
     		}
     		
@@ -109,7 +114,7 @@ public class CodeBuilder {
         return new StringBuilder().append("this.").append(codecFieldName(jfieldName)).append(" = (").append(FieldCodec.class.getName()).append(")$1.get(\"").append(jfieldName).append("\");").toString();
     }
     
-    static <T> TypePSSetter<T> makeSetter(FTable ftable, List<FColumn> columns) throws Exception {
+    public static <T> TypePSSetter<T> makeSetter(FTable ftable, List<FColumn> columns) throws Exception {
     	if(columns == null) return null;
     	String clazzName = ftable.clazz.getName();
     	String newName = clazzName + "$TypePSSetter_" + suffix(ftable.columns == columns);
@@ -124,7 +129,7 @@ public class CodeBuilder {
     		body.append(clazzName).append(" _tmp_ = (").append(clazzName).append(") $2;");
     		int index = 1;
     		for (FColumn fColumn : columns) {
-    			body.append(TypeCodes.makeSetterBodyElement(ftable.codecs, fColumn, "_tmp_", "$1", index));
+    			body.append(FieldCodes.makeSetterBodyElement(ftable.codecs, fColumn, "_tmp_", "$1", index));
     			++index;
     		}
     		body.append("}");

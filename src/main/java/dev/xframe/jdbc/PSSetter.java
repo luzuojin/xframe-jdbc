@@ -10,7 +10,7 @@ import java.sql.SQLException;
 @FunctionalInterface
 public interface PSSetter {
 	
-	void set(PreparedStatement pstmt) throws SQLException;
+	void set(PreparedStatement pstmt) throws Exception;
 	
 	static PSSetter of(Object param) {
 		return new SimpleParamPSSetter(param);
