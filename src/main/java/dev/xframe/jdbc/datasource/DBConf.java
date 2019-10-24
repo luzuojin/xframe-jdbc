@@ -32,7 +32,7 @@ public class DBConf {
 	}
 	
 	private static final int default_max_conn = 1;
-    private static final int default_min_conn = 2;
+    private static final int default_min_conn = 1;
 
     @Override
     public int hashCode() {
