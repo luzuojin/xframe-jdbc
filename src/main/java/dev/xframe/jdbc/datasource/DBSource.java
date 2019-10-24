@@ -1,20 +1,26 @@
 package dev.xframe.jdbc.datasource;
 
-public interface DBSource {
+public class DBSource {
 	
-	String user();
+	final String user;
 	
-	String password();
+	final String password;
 	
-	String driver();
+	final String driver;
 	
-	String url();
+	final String url;
 	
-	default int minconn() {
-		return 1;
-	}
-	default int maxconn() {
-		return 1;
+	final int minconn;
+	
+	final int maxconn;
+	
+	public DBSource(String user, String password, String driver, String url, int minconn, int maxconn) {
+		this.user = user;
+		this.password = password;
+		this.driver = driver;
+		this.url = url;
+		this.minconn = minconn;
+		this.maxconn = maxconn;
 	}
 	
 }

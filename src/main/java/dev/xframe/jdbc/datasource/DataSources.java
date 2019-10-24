@@ -12,21 +12,21 @@ public class DataSources {
 
 	public static DataSource tomcatJdbc(DBSource source) {
 		PoolProperties p = new PoolProperties();
-        p.setUrl(source.url());
-        p.setUsername(source.user());
-        p.setPassword(source.password());
+        p.setUrl(source.url);
+        p.setUsername(source.user);
+        p.setPassword(source.password);
         p.setJmxEnabled(true);
-        p.setDriverClassName(source.driver());
+        p.setDriverClassName(source.driver);
         p.setValidationQuery("SELECT 1;");
         p.setTestWhileIdle(true);
         p.setTestOnBorrow(false);
         p.setTestOnReturn(false);
         p.setValidationInterval(30000);
         p.setTimeBetweenEvictionRunsMillis(30000);
-        p.setMaxActive(source.maxconn());
-        p.setInitialSize(source.minconn());
-        p.setMinIdle(source.minconn());
-        p.setMaxIdle(source.maxconn());
+        p.setMaxActive(source.maxconn);
+        p.setInitialSize(source.minconn);
+        p.setMinIdle(source.minconn);
+        p.setMaxIdle(source.maxconn);
         p.setMaxWait(10000);
         p.setRemoveAbandonedTimeout(60);
         p.setMinEvictableIdleTimeMillis(30000);
