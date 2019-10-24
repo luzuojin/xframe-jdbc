@@ -67,5 +67,17 @@ public class DBConf {
             return false;
         return true;
     }
+    
+    static final String mysql_template = "jdbc:mysql://%s:%s/%s?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&useServerPrepStmts=true&rewriteBatchedStatements=true";
+    DBSource toMysqlSource() {
+    	return new DBSource() {
+			public String user() {return user;}
+			public String password() {return pass;}
+			public String driver() {return "com.mysql.jdbc.Driver";}
+			public String url() {return String.format(mysql_template, host, port, name);}
+			public int minconn() {return minconn;}
+			public int maxconn() {return maxconn;}
+		};
+    }
 	
 }
