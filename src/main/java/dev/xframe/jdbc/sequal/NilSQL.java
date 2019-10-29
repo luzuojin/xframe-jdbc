@@ -5,11 +5,11 @@ import java.util.List;
 
 import dev.xframe.jdbc.PSSetter;
 
-public class NopeSQL<T> implements SQL<T> {
+public class NilSQL<T> implements SQL<T> {
 	
 	private String cause;
 	
-	public NopeSQL(String cause) {
+	public NilSQL(String cause) {
 		this.cause = cause;
 	}
 	

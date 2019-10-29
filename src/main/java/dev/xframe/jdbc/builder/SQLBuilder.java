@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 
 import dev.xframe.jdbc.builder.analyse.FColumn;
 import dev.xframe.jdbc.builder.analyse.FTable;
-import dev.xframe.jdbc.sequal.NopeSQL;
+import dev.xframe.jdbc.sequal.NilSQL;
 import dev.xframe.jdbc.sequal.SQL;
 import dev.xframe.jdbc.sequal.SQL.Option;
 import dev.xframe.jdbc.sequal.SQLFactory;
@@ -43,7 +43,7 @@ public class SQLBuilder {
             String sql = buildInsertSQLStr(ftable) + " ON DUPLICATE KEY UPDATE " + upt;
             return factory.newSQL(Option.INSTUP, sql.toString(), ftable.batchLimit(ftable.columns.size()), CodecBuilder.buildSetter(ftable, ftable.columns), null);
         }
-        return new NopeSQL<>(String.format("Table[%s] unique index is empty or not only", ftable.tableName));
+        return new NilSQL<>(String.format("Table[%s] unique index is empty or not only", ftable.tableName));
     }
     
     public static <T> SQL<T> buildUpdateSQL(SQLFactory<T> factory, FTable ftable, List<FColumn> whereColumns) throws Exception {
@@ -58,7 +58,7 @@ public class SQLBuilder {
             
             return factory.newSQL(Option.UPDATE, sql, ftable.batchLimit(ftable.columns.size() + whereColumns.size()), CodecBuilder.buildSetter(ftable, fColumns), null);
         }
-        return new NopeSQL<>(String.format("Table[%s] update option where columns is empty", ftable.tableName));
+        return new NilSQL<>(String.format("Table[%s] update option where columns is empty", ftable.tableName));
     }
     
     public static <T> SQL<T> buildUpdateSQL(SQLFactory<T> factory, FTable ftable) throws Exception {
@@ -79,7 +79,7 @@ public class SQLBuilder {
     	if(!whereColumns.isEmpty()) {
             return factory.newSQL(Option.DELETE, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), CodecBuilder.buildSetter(ftable, whereColumns), null);
         }
-        return new NopeSQL<>(String.format("Table[%s] delete option where columns is empty", ftable.tableName));
+        return new NilSQL<>(String.format("Table[%s] delete option where columns is empty", ftable.tableName));
     }
 
 	private static String joinColumnsToCondStr(List<FColumn> columns) {
