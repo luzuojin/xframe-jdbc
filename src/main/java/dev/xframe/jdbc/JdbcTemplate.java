@@ -25,8 +25,6 @@ public class JdbcTemplate {
 
     public final DataSource dataSource;
     
-    private int maxPreparedStmtCount;
-    
     /**
 	 * 防止某些异常代码出现 在Debug环境中使用XResultSet代替
 	 */
@@ -36,13 +34,6 @@ public class JdbcTemplate {
     
     public JdbcTemplate(DataSource dataSource) {
     	this.dataSource = dataSource;
-    }
-    
-    public int maxPreparedStmtCount() {
-        if(maxPreparedStmtCount == 0) {
-            maxPreparedStmtCount = (int) Math.min(this.fetchLong("SELECT @@max_prepared_stmt_count;", PSSetter.NONE), 0x7fff);
-        }
-        return maxPreparedStmtCount;
     }
     
     /**

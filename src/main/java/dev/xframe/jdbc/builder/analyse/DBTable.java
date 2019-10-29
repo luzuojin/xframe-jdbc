@@ -17,7 +17,6 @@ public class DBTable {
 	List<DBIndex> indexes;
 	
 	Map<String, DBColumn> columns;
-	int maxPreparedStmtCount;
 	
 	public DBTable(String name) {
 		this.tableName = name;

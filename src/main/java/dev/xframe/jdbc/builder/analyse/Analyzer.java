@@ -43,7 +43,6 @@ public class Analyzer {
     private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecs fieldCodecs) {
     	FTable fTable = new FTable();
     	fTable.clazz = jtable.clazz;
-    	fTable.maxPreparedStmtCount = dbtable.maxPreparedStmtCount;
     	
     	if(dbtable != null) {
     		fTable.tableName = dbtable.tableName;
@@ -204,8 +203,6 @@ public class Analyzer {
 				return table;
 			}
 		});
-		
-		table.maxPreparedStmtCount = jdbcTemplate.maxPreparedStmtCount();
 		
 		Connection conn = null;
         try {

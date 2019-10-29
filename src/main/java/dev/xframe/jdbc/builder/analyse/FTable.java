@@ -21,7 +21,6 @@ public class FTable {
 	public List<FIndex> uniqueIndexs = new ArrayList<>();
 	public List<FIndex> indexs = new ArrayList<>();
 	public List<FColumn> columns = new ArrayList<>();
-	public int maxPreparedStmtCount;
 	
 	public Map<String, FColumn> columnMap = new HashMap<>();//key column name (lowercase)
 	
@@ -41,6 +40,6 @@ public class FTable {
 	    return uniqueIndexs.isEmpty() ? true : (columns.size() > uniqueIndexs.get(0).columns.size());
 	}
 	public int batchLimit(int placeHolderCount) {
-	    return Math.min(placeHolderCount > 0 ? maxPreparedStmtCount / placeHolderCount : 2048, 2048);
+	    return 2048;
 	}
 }
