@@ -40,6 +40,6 @@ public class FTable {
 	    return uniqueIndexs.isEmpty() ? true : (columns.size() > uniqueIndexs.get(0).columns.size());
 	}
 	public int batchLimit(int placeHolderCount) {
-	    return 2048;
+	    return Math.min(65535/placeHolderCount, 2048);
 	}
 }
