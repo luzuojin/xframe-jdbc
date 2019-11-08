@@ -11,13 +11,14 @@ import javax.sql.DataSource;
 import dev.xframe.jdbc.codec.Delimiters;
 import dev.xframe.jdbc.codec.FieldCodec;
 import dev.xframe.jdbc.codec.FieldCodecs;
+import dev.xframe.jdbc.datasource.DBIdent;
 import dev.xframe.jdbc.sequal.SQLExecutor;
 
 public class JdbcEnviron {
 	
 	static int asyncThreads;
 	
-	static Map<Object, JdbcTemplate> jdbcTemplates = new HashMap<>();
+	static Map<DBIdent, JdbcTemplate> jdbcTemplates = new HashMap<>();
 	
 	static int instupUsage;
 	
@@ -52,8 +53,8 @@ public class JdbcEnviron {
 		 * @param key: mark difference datasources
 		 * @param dataSource
 		 */
-		public EnvironConfigurator setDatasource(Object dbKey, DataSource dataSource) {
-			jdbcTemplates.put(dbKey, new JdbcTemplate(dataSource));
+		public EnvironConfigurator setDatasource(DBIdent ident, DataSource dataSource) {
+			jdbcTemplates.put(ident, new JdbcTemplate(dataSource));
 			return this;
 		}
 		
@@ -101,8 +102,8 @@ public class JdbcEnviron {
 		return asyncThreads > 0;
 	}
 
-	public static JdbcTemplate getJdbcTemplate(Object dbKey) {
-		return jdbcTemplates.get(dbKey);
+	public static JdbcTemplate getJdbcTemplate(DBIdent ident) {
+		return jdbcTemplates.get(ident);
 	}
 
 	public static int getInstupUsage() {

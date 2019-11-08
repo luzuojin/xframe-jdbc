@@ -13,6 +13,7 @@ import dev.xframe.jdbc.builder.analyse.Analyzer;
 import dev.xframe.jdbc.builder.analyse.FTable;
 import dev.xframe.jdbc.codec.FieldCodec;
 import dev.xframe.jdbc.codec.FieldCodecs;
+import dev.xframe.jdbc.datasource.DBIdent;
 import dev.xframe.jdbc.sequal.SQL;
 import dev.xframe.jdbc.sequal.SQLFactory;
 import dev.xframe.jdbc.sql.TypeSQL;
@@ -21,7 +22,7 @@ public class QueryBuilder<T> {
 	
 	private Class<T> type;
 	
-	private Object dbKey;
+	private DBIdent dbKey;
 	
 	private String tableName;
 	
@@ -44,7 +45,7 @@ public class QueryBuilder<T> {
 		this.type = clazz;
 	}
 	
-	public QueryBuilder<T> setTable(Object dbKey, String tableName) {
+	public QueryBuilder<T> setTable(DBIdent dbKey, String tableName) {
 		this.dbKey = dbKey;
 		this.tableName = tableName;
 		return this;
