@@ -12,9 +12,6 @@ import java.util.StringTokenizer;
 
 public class SQLScript {
     
-    @SuppressWarnings("unchecked")
-    private static List<String> EMPTY = Collections.EMPTY_LIST;
-    
     private static String tokenDels = ";\"'\\-/*\r\n\f";
     private static String delimiter = ";";
     
@@ -86,7 +83,7 @@ public class SQLScript {
             if(file.exists()) {
                 return parse(new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8));
             } else {
-                return EMPTY;
+                return Collections.emptyList();
             }
         } catch (IOException e) {
             throw new IllegalArgumentException(e);
