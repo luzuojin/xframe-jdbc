@@ -57,7 +57,7 @@ public class ListSetCodec<T extends Collection<V>, V> implements FieldCodec<T, S
         Class<?> factory = List.class.isAssignableFrom(field.getType()) ? List.class : Set.class;
         ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
         Class<?> genericType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
-        return new ListSetCodec(BasicCodecs.getCollectionFactory(factory), BasicCodecs.getElementCodec(genericType), Delimiters.getMajor(field));
+        return new ListSetCodec(BasicCodecs.getCollectionFactory(factory), BasicCodecs.getElementCodec(genericType), Delimiters.getMajor(BasicCodecs.getCodecAnnVal(field)));
     }
 
 }

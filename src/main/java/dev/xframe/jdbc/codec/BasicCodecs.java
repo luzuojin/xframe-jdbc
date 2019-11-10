@@ -17,6 +17,10 @@ public class BasicCodecs {
     
     private static final Map<Class<?>, CollectionFactory<?>> COLLECTION_FACTORIES = new HashMap<Class<?>, CollectionFactory<?>>();
     
+    public static int getCodecAnnVal(Field field) {
+		return field.isAnnotationPresent(Codec.class) ? field.getAnnotation(Codec.class).value() : 0;
+	}
+    
     public static boolean isProvided(Class<?> c) {
 		return c.isEnum() || ArrayCodec.isArray(c) || List.class.isAssignableFrom(c) || Set.class.isAssignableFrom(c);
     }

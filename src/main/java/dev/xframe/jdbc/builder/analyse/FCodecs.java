@@ -32,8 +32,8 @@ public class FCodecs {
 		return codecs.containsKey(fieldName);
 	}
 
-	public Class<?> findColumnTypeFromCodec(String fieldName) {
-        return codecs.get(fieldName).getColumnType();
+	public Class<?> getColumnActualType(String fieldName) {
+        return codecs.get(fieldName).getColumnActualType();
     }
 
 	public FieldCodec<?, ?> get(String key) {

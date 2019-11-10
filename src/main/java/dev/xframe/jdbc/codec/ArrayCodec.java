@@ -16,7 +16,8 @@ public abstract class ArrayCodec<T> implements FieldCodec<T, String>, ElementCod
     
     @SuppressWarnings({ "unchecked"})
     public static <T> FieldCodec<T, String> fetchCodec(Field field) {
-        return (FieldCodec<T, String>) fetchCodec0(field.getType(), Delimiters.getMajor(field), Delimiters.getMinor(field));
+    	int delVal = BasicCodecs.getCodecAnnVal(field);
+        return (FieldCodec<T, String>) fetchCodec0(field.getType(), Delimiters.getMajor(delVal), Delimiters.getMinor(delVal));
     }
     
     @SuppressWarnings({ "unchecked", "rawtypes" })

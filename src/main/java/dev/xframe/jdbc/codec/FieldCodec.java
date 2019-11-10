@@ -8,9 +8,12 @@ public interface FieldCodec<F, C> {
     C encode(F fieldValue);
     F decode(C columnValue);
     
-    default Class<?> getColumnType() {
-        Class<?> clazz = this.getClass();
-        do {
+    default Class<?> getColumnActualType() {
+        return getColumnActualType(this.getClass());
+    }
+    
+	static Class<?> getColumnActualType(Class<?> clazz) {
+		do {
             Type[] gInterfazes = clazz.getGenericInterfaces();
             for (Type type : gInterfazes) {
                 if(type instanceof ParameterizedType) {
@@ -23,5 +26,6 @@ public interface FieldCodec<F, C> {
             clazz = clazz.getSuperclass();
         } while((!Object.class.equals(clazz)));
         return null;//can`t be here
-    }
+	}
+	
 }

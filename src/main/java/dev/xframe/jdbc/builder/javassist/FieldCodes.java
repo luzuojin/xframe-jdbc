@@ -57,7 +57,7 @@ class FieldCodes {
 	static <T> String columnSetVal(FCodecs codecs, String type, JColumn jColumn) {
 	    String val = fieldGetVal(type, jColumn);
 	    if(codecs.hasCodec(jColumn.name)) {//pstmt.setInt(1, (int)this.xxxCodec.encode((Integer)this.getXxx()))
-	        return objToPrimitiveCasting(codecs.findColumnTypeFromCodec(jColumn.name), String.format("this.%s.encode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObjCasting(jColumn.type, val)));
+	        return objToPrimitiveCasting(codecs.getColumnActualType(jColumn.name), String.format("this.%s.encode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObjCasting(jColumn.type, val)));
 	    }
 	    return objToPrimitiveCasting(jColumn.type, val);//pstmt.set(1, (int)this.getXxx())
 	}
@@ -74,7 +74,7 @@ class FieldCodes {
 	}
 	
 	static <T> String psSetter(FCodecs codecs, JColumn jColumn) {
-		Class<?> c = codecs.hasCodec(jColumn.name) ? codecs.findColumnTypeFromCodec(jColumn.name) : jColumn.type;
+		Class<?> c = codecs.hasCodec(jColumn.name) ? codecs.getColumnActualType(jColumn.name) : jColumn.type;
         if(Boolean.class.equals(c) || boolean.class.equals(c)) {
             return "setBoolean";
         } else if(Byte.class.equals(c) || byte.class.equals(c)) {
@@ -143,13 +143,13 @@ class FieldCodes {
 	static <T> String fieldSetVal(FCodecs codecs, String rs, JColumn jColumn, int index) {
 		String rsget = new StringBuilder().append(rs).append(".").append(rsGetter(codecs, jColumn)).append("(").append(index).append(")").toString();//rs.getInt(1)
 		if(codecs.hasCodec(jColumn.name)) {//(int) this.xxxCodec.decode((Integer)rs.getInt(1));
-			return objToPrimitive(jColumn.type, String.format("this.%s.decode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObj(codecs.findColumnTypeFromCodec(jColumn.name), rsget)));
+			return objToPrimitive(jColumn.type, String.format("this.%s.decode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObj(codecs.getColumnActualType(jColumn.name), rsget)));
 		}
 		return primitiveToObj(jColumn.type, rsget);//(Integer) rs.getInt(1);
 	}
 
 	static <T> String rsGetter(FCodecs codecs, JColumn jColumn) {
-	    Class<?> c = codecs.hasCodec(jColumn.name) ? codecs.findColumnTypeFromCodec(jColumn.name) : jColumn.type;
+	    Class<?> c = codecs.hasCodec(jColumn.name) ? codecs.getColumnActualType(jColumn.name) : jColumn.type;
         if(Boolean.class.equals(c) || boolean.class.equals(c)) {
             return "getBoolean";
         } else if(Byte.class.equals(c) || byte.class.equals(c)) {

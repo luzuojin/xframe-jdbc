@@ -1,7 +1,5 @@
 package dev.xframe.jdbc.codec;
 
-import java.lang.reflect.Field;
-
 /**
  * 
  * (major & 0xFF) | (minor << 8)
@@ -16,19 +14,15 @@ public class Delimiters {
 		DEFAULTS = pack(major, minor);
 	}
 
-	public static String getMajor(Field field) {
-		return Character.toString(unpackMajor(getCodecAnnVal(field), DEFAULTS));
+	public static String getMajor(int delVal) {
+		return Character.toString(unpackMajor(delVal, DEFAULTS));
 	}
 
-	public static String getMinor(Field field) {
-		return Character.toString(unpackMinor(getCodecAnnVal(field), DEFAULTS));
+	public static String getMinor(int delVal) {
+		return Character.toString(unpackMinor(delVal, DEFAULTS));
 	}
 
-	private static int getCodecAnnVal(Field field) {
-		return field.isAnnotationPresent(Codec.class) ? field.getAnnotation(Codec.class).value() : 0;
-	}
-	
-	private static int pack(char major, char minor) {
+	public static int pack(char major, char minor) {
         return (major & 0xFF) | (minor << 8);
     }
     
