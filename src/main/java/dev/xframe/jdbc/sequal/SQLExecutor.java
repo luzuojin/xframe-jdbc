@@ -50,7 +50,7 @@ public class SQLExecutor {
 	}
 
 	private BlockingQueue<Runnable> newTaskQueue() {
-		return Boolean.parseBoolean(System.getProperty("xframe.jdbc.mpsc.usage", "true")) ? new MpscLinkedBlockingQueue<>() : new LinkedBlockingQueue<>();
+		return Boolean.parseBoolean(System.getProperty("xframe.jdbc.mpsc.usage", "false")) ? new MpscLinkedBlockingQueue<>() : new LinkedBlockingQueue<>();
 	}
 	
 	private ThreadFactory newThreadFactory() {
