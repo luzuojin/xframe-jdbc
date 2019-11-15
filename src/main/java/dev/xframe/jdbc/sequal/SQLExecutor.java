@@ -108,33 +108,54 @@ public class SQLExecutor {
         }
     }
     
+    static class MpscNode<E> {
+        @SuppressWarnings("rawtypes")
+        static final AtomicReferenceFieldUpdater<MpscNode, MpscNode> nextUpdater = AtomicReferenceFieldUpdater.newUpdater(MpscNode.class, MpscNode.class, "next");
+        E value;
+        volatile MpscNode<E> next;
+        public MpscNode(E value) {
+            this.value = value;
+        }
+        E clear() {
+            E o = this.value;
+            this.value = null;
+            return o;
+        }
+        void setNext(MpscNode<E> next) {
+            nextUpdater.lazySet(this, next);
+        }
+    }
+    
+    static abstract class MpscLinkedBlockingQueuePad1<E> extends AbstractQueue<E> implements BlockingQueue<E> {
+        long p10, p11, p12, p13, p14, p15, p16, p17, p18, p19, p1a, p1b, p1c, p1d, p1e, p1f;
+    }
+    static abstract class MpscLinkedBlockingQueueHeadRef<E> extends MpscLinkedBlockingQueuePad1<E> {
+        @SuppressWarnings("rawtypes")
+        static final AtomicReferenceFieldUpdater<MpscLinkedBlockingQueueHeadRef, MpscNode> headUpdater = AtomicReferenceFieldUpdater.newUpdater(MpscLinkedBlockingQueueHeadRef.class, MpscNode.class, "head");
+        volatile MpscNode<E> head;
+    }
+    static abstract class MpscLinkedBlockingQueuePad2<E> extends MpscLinkedBlockingQueueHeadRef<E> {
+        long p20, p21, p22, p23, p24, p25, p26, p27, p28, p29, p2a, p2b, p2c, p2d, p2e, p2f;
+    }
+    static abstract class MpscLinkedBlockingQueueTailRef<E> extends MpscLinkedBlockingQueuePad2<E> {
+        @SuppressWarnings("rawtypes")
+        static final AtomicReferenceFieldUpdater<MpscLinkedBlockingQueueTailRef, MpscNode> tailUpdater = AtomicReferenceFieldUpdater.newUpdater(MpscLinkedBlockingQueueTailRef.class, MpscNode.class, "tail");
+        volatile MpscNode<E> tail;
+    }
+    static abstract class MpscLinkedBlockingQueuePad3<E> extends MpscLinkedBlockingQueueTailRef<E> {
+        long p30, p31, p32, p33, p34, p35, p36, p37, p38, p39, p3a, p3b, p3c, p3d, p3e, p3f;
+    }
+    
     /**
      * multi producer single consumer blocking queue
+     * 不支持shutdownNow, drainTo/remove不支持多线程模式
      * @author luzj
      * @param <E>
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    static class MpscLinkedBlockingQueue<E> extends AbstractQueue<E> implements BlockingQueue<E> {
-        
-        static final AtomicReferenceFieldUpdater</*-obsessive-*/MpscNode, MpscNode> nextUpdater = AtomicReferenceFieldUpdater.newUpdater(MpscNode.class, MpscNode.class, "next");
-        static final AtomicReferenceFieldUpdater<MpscLinkedBlockingQueue, MpscNode> headUpdater = AtomicReferenceFieldUpdater.newUpdater(MpscLinkedBlockingQueue.class, MpscNode.class, "head");
-        static final AtomicReferenceFieldUpdater<MpscLinkedBlockingQueue, MpscNode> tailUpdater = AtomicReferenceFieldUpdater.newUpdater(MpscLinkedBlockingQueue.class, MpscNode.class, "tail");
-        
-        static class MpscNode<E> {
-            E value;
-            volatile MpscNode<E> next;
-            public MpscNode(E value) {
-                this.value = value;
-            }
-            E clear() {
-                E o = this.value;
-                this.value = null;
-                return o;
-            }
-        }
-        
-        volatile MpscNode<E> head;
-        volatile MpscNode<E> tail;
+    @SuppressWarnings("unchecked")
+    static class MpscLinkedBlockingQueue<E> extends MpscLinkedBlockingQueuePad3<E> {
+        @SuppressWarnings("rawtypes")
+        static final AtomicReferenceFieldUpdater<MpscLinkedBlockingQueue, Thread> waitUpdater = AtomicReferenceFieldUpdater.newUpdater(MpscLinkedBlockingQueue.class, Thread.class, "waiting");
         
         public MpscLinkedBlockingQueue() {
             MpscNode<E> val = new MpscNode<>(null);
@@ -152,23 +173,19 @@ public class SQLExecutor {
         MpscNode<E> setTail(MpscNode<E> val) {
             return tailUpdater.getAndSet(this, val);
         }
-        
+        MpscNode<E> getTail() {
+            return tailUpdater.get(this);
+        }
         boolean updateTail(MpscNode<E> expect, MpscNode<E> update) {
             return tailUpdater.compareAndSet(this, expect, update);
         }
         
-        MpscNode<E> getTail() {
-            return tailUpdater.get(this);
-        }
-        
         void setNext(MpscNode<E> prev, MpscNode<E> next) {
-            nextUpdater.lazySet(prev, next);
+            prev.setNext(next);
         }
-        
         void delNext(MpscNode<E> node) {
             setNext(node, node);//防止node.next存活时node不会释放, 设置node是因为next==null有其他的意义
         }
-        
         MpscNode<E> spinGetNext(MpscNode<E> node) {
             MpscNode<E> next;
             while ((next = node.next) == null) {
@@ -176,7 +193,6 @@ public class SQLExecutor {
             }
             return next;
         }
-        
         //@see setNext
         MpscNode<E> actualGetNext(MpscNode<E> node) {
             MpscNode<E> next = node.next;
@@ -226,52 +242,49 @@ public class SQLExecutor {
 
         @Override
         public void put(E e) throws InterruptedException {
-            offer(e);
+            if(!offer(e)) {
+                if(Thread.currentThread().isInterrupted()) {
+                    throw new InterruptedException("Interrupted while waiting offer data");
+                }
+            }
         }
 
         @Override
         public boolean offer(E e, long timeout, TimeUnit unit) throws InterruptedException {
-            return offer(e);
+            throw new UnsupportedOperationException();
         }
 
-        Thread singleWaiter;
-        
+        volatile int barrier;
+        volatile Thread waiting;
         void singal() {
-            LockSupport.unpark(singleWaiter);
+            barrier = 1;//保证singal线程获得的waiting是最新值
+            LockSupport.unpark(waiting);
         }
         
         @Override
         public E take() throws InterruptedException {
-            interruptedCheck();
-            while(getHead().next == null) {
-                singleWaiter = Thread.currentThread();
+            E e = poll();
+            if(e != null) return e;
+            
+            Thread t = Thread.currentThread();
+            waiting = t;
+            while((e = poll()) == null) {
                 LockSupport.park(this);
-                interruptedCheck();
+                if(t.isInterrupted())
+                    throw new InterruptedException("Interrupted while waiting poll data");
             }
-            return poll();
+            waitUpdater.lazySet(this, t);
+            return e;
         }
 
         @Override
         public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-            interruptedCheck();
-            long nanos = unit.toNanos(timeout);
-            long deadline = System.nanoTime() + nanos;
-            while(nanos > 0 && getHead().next == null) {
-                singleWaiter = Thread.currentThread();
-                LockSupport.parkNanos(this, nanos);
-                nanos = deadline - System.nanoTime();
-                interruptedCheck();
-            }
-            return poll();
-        }
-        
-        void interruptedCheck() throws InterruptedException {
-            if(Thread.interrupted()) throw new InterruptedException();
+            throw new UnsupportedOperationException();
         }
         
         @Override
         public boolean isEmpty() {
-            return getHead() == getTail();
+            return actualGetNext(getHead()) == null;
         }
 
         @Override
@@ -292,19 +305,13 @@ public class SQLExecutor {
         
         @Override
         public int drainTo(Collection<? super E> c, int maxElements) {
-            MpscNode<E> head = getHead();
-            MpscNode<E> tail = getTail();
-            int size = 0;
-            while (head != tail && head != null && size < maxElements) {
-                MpscNode<E> next = head.next;
-                if (next == head){
-                    return size;
-                }
-                c.add(poll0(head, next));
-                head = next;
-                size ++;
+            int s = 0;
+            E e;
+            while(s < maxElements && (e = poll()) != null) {
+                c.add(e);
+                s ++;
             }
-            return size;
+            return s;
         }
         
         @Override
@@ -342,7 +349,7 @@ public class SQLExecutor {
         
         @Override
         public int remainingCapacity() {
-            return Integer.MAX_VALUE;
+            throw new UnsupportedOperationException();
         }
 
         @Override
