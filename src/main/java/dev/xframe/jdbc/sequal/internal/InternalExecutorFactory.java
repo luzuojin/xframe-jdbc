@@ -18,29 +18,5 @@ public class InternalExecutorFactory {
     private static SingleThreadExecutor newInternalExecutor() {
         return new SingleThreadExecutor(new InternalThreadFactory(), new MpscLinkedBlockingQueue<>(), (r, e) -> r.run());
     }
-    
-    
-    public static void main(String[] args) {
-        ExecutorService exec = newInternalExecutor();
-        for (int i = 0; i < 500; i++) {
-            final String j = String.valueOf(i);
-            exec.execute(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println(j + "\t" + Thread.currentThread().getName());
-                }
-            });
-        }
-        exec.shutdownNow();
-        for (int i = 500; i < 1000; i++) {
-            final String j = String.valueOf(i);
-            exec.execute(new Runnable() {
-                @Override
-                public void run() {
-                    System.out.println(j + "\t" + Thread.currentThread().getName());
-                }
-            });
-        }
-    }
 
 }
