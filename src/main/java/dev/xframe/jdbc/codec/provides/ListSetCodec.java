@@ -1,11 +1,15 @@
-package dev.xframe.jdbc.codec;
+package dev.xframe.jdbc.codec.provides;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import dev.xframe.jdbc.codec.Delimiters;
+import dev.xframe.jdbc.codec.FieldCodec;
 
 public class ListSetCodec<T extends Collection<V>, V> implements FieldCodec<T, String> {
     
@@ -52,12 +56,15 @@ public class ListSetCodec<T extends Collection<V>, V> implements FieldCodec<T, S
         return List.class.isAssignableFrom(field.getType()) || Set.class.isAssignableFrom(field.getType());
     }
     
+    public static <T> FieldCodec<T, String> build(Field field) {
+        return build(field.getType(), field.getGenericType(), CodecUtils.getCodecAnnVal(field));
+    }
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public static <T> FieldCodec<T, String> fetchCodec(Field field) {
-        Class<?> factory = List.class.isAssignableFrom(field.getType()) ? List.class : Set.class;
-        ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
-        Class<?> genericType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
-        return new ListSetCodec(BasicCodecs.getCollectionFactory(factory), BasicCodecs.getElementCodec(genericType), Delimiters.getMajor(BasicCodecs.getCodecAnnVal(field)));
+    public static <T> FieldCodec<T, String> build(Class<?> type, Type genericType, int delimiterVal) {
+        Class<?> factory = List.class.isAssignableFrom(type) ? List.class : Set.class;
+        ParameterizedType parameterizedType = (ParameterizedType) genericType;
+        Class<?> genericActualType = (Class<?>) parameterizedType.getActualTypeArguments()[0];
+        return new ListSetCodec(CodecUtils.getCollectionFactory(factory), CodecUtils.getElementCodec(genericActualType), Delimiters.getMajor(delimiterVal));
     }
 
 }

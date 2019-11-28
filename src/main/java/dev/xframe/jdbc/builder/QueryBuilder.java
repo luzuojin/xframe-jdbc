@@ -3,6 +3,7 @@ package dev.xframe.jdbc.builder;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 import dev.xframe.jdbc.JdbcEnviron;
 import dev.xframe.jdbc.JdbcTemplate;
@@ -65,6 +66,14 @@ public class QueryBuilder<T> {
 		this.fieldCodecs.add(fieldType, fieldCodec);
 		return this;
 	}
+	public QueryBuilder<T> setFieldCodec(Function<T, Object> getter, FieldCodec<?, ?> fieldCodec) {
+        this.fieldCodecs.add(getter, fieldCodec);
+        return this;
+    }
+	public QueryBuilder<T> setFieldCodec(Function<T, Object> getter, int delimiters) {
+	    this.fieldCodecs.add(getter, delimiters);
+	    return this;
+	}
 	
 	public QueryBuilder<T> setSQL(int index, TypeSQL tsql) {
 		int nl = Math.max(index, tsqls.length) + 1;
@@ -108,6 +117,9 @@ public class QueryBuilder<T> {
 	
 	public TypeQuery<T> build() {
 		try {
+		    if(dbKey == null) throw new IllegalArgumentException("dbKey is empty");
+		    if(tableName == null) throw new IllegalArgumentException("tableName is empty");
+		    
 			JdbcTemplate jdbcTemplate = JdbcEnviron.getJdbcTemplate(dbKey);
 			
 			FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMapper, fieldCodecs);
@@ -142,8 +154,14 @@ public class QueryBuilder<T> {
 			setter.setTSqls(query, xtsqls);
 			
 			return query;
-		} catch (Throwable e) {throw new RuntimeException(e);}
+		} catch (Throwable e) {QueryBuilder.throwException0(e);}
+		return null;
 	}
+	
+    @SuppressWarnings("unchecked")
+    static <E extends Throwable> void throwException0(Throwable e) throws E {
+        throw (E) e;
+    }
 
 	private boolean isAsyncModel() {
 		return JdbcEnviron.isAsyncModel() && (asyncModel == 1 || asyncModel == -1);

@@ -29,11 +29,11 @@ import java.util.Map;
  * @author luzj
  *
  */
-public class XResultSet implements ResultSet {
+public class WrappedRS implements ResultSet {
 	
     final ResultSet rs;
     
-	public XResultSet(ResultSet rs) {
+	public WrappedRS(ResultSet rs) {
 		this.rs = rs;
 	}
 

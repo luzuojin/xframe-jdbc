@@ -1,4 +1,4 @@
-package dev.xframe.jdbc.codec;
+package dev.xframe.jdbc.codec.provides;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -9,7 +9,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public class BasicCodecs {
+import dev.xframe.jdbc.codec.Codec;
+
+class CodecUtils {
     
     private static final Map<Class<?>, ElementCodec<?>> ELEMENT_CODECES = new HashMap<Class<?>, ElementCodec<?>>();
     
@@ -21,19 +23,10 @@ public class BasicCodecs {
 		return field.isAnnotationPresent(Codec.class) ? field.getAnnotation(Codec.class).value() : 0;
 	}
     
-    public static boolean isProvided(Class<?> c) {
-		return c.isEnum() || ArrayCodec.isArray(c) || List.class.isAssignableFrom(c) || Set.class.isAssignableFrom(c);
-    }
-    
-    public static FieldCodec<?, ?> getFieldCodec(Field field) {//array or list/set
-        Class<?> type = field.getType();
-        return type.isEnum() ? EnumCodec.fetchCodec(type) : (type.isArray() ? ArrayCodec.fetchCodec(field) : ListSetCodec.fetchCodec(field));
-    }
-    
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public static <T> ElementCodec<T> getElementCodec(Class<T> clazz) {
         if (Enum.class.isAssignableFrom(clazz)) {
-            return (ElementCodec<T>) new EnumElementCodec(EnumCodec.fetchCodec((Class<? extends Enum<?>>) clazz));
+            return (ElementCodec<T>) new EnumElementCodec(EnumCodec.build((Class<? extends Enum<?>>) clazz));
         }
         return (ElementCodec<T>) ELEMENT_CODECES.get(clazz);
     }

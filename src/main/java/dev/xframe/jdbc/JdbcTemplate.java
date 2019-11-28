@@ -14,7 +14,7 @@ import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import dev.xframe.jdbc.tools.XResultSet;
+import dev.xframe.jdbc.tools.WrappedRS;
 
 public class JdbcTemplate {
 	
@@ -28,8 +28,8 @@ public class JdbcTemplate {
     /**
 	 * 防止某些异常代码出现 在Debug环境中使用XResultSet代替
 	 */
-	private ResultSet xframe(ResultSet rs) {
-		return logger.isDebugEnabled() ? new XResultSet(rs) : rs;
+	private ResultSet wrap(ResultSet rs) {
+		return logger.isDebugEnabled() ? new WrappedRS(rs) : rs;
 	}
     
     public JdbcTemplate(DataSource dataSource) {
@@ -83,7 +83,7 @@ public class JdbcTemplate {
             
             rs = pstmt.executeQuery();
             if(rs.last()) {
-                return parser.parse(xframe(rs));
+                return parser.parse(wrap(rs));
             }
             return null;
         } catch (Exception e) {
@@ -116,7 +116,7 @@ public class JdbcTemplate {
             
             rs = pstmt.executeQuery();
             if(rs.last()) {
-                return parser.parse(xframe(rs));
+                return parser.parse(wrap(rs));
             }
             return null;
         } catch (Exception e) {
@@ -144,7 +144,7 @@ public class JdbcTemplate {
             rs = pstmt.executeQuery();
             List<T> ret = new ArrayList<T>();
             while(rs.next()) {
-                ret.add(parser.parse(xframe(rs)));
+                ret.add(parser.parse(wrap(rs)));
             }
             return ret;
         } catch (Exception e) {

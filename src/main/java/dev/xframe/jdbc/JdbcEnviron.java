@@ -82,11 +82,11 @@ public class JdbcEnviron {
 		 * @param codec
 		 */
 		public EnvironConfigurator setFieldCodec(Class<?> type, FieldCodec<?, ?> codec) {
-			FieldCodecs.addDefault(type, codec);
+			FieldCodecs.addGlobal(type, codec);
 			return this;
 		}
 		public EnvironConfigurator setFieldCodec(Predicate<Class<?>> p, Function<Field, FieldCodec<?, ?>> fc) {
-			FieldCodecs.addDefault(p, fc);
+			FieldCodecs.addGlobal(p, fc);
 			return this;
 		}
 	}

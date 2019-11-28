@@ -1,8 +1,11 @@
-package dev.xframe.jdbc.codec;
+package dev.xframe.jdbc.codec.provides;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.regex.Pattern;
+
+import dev.xframe.jdbc.codec.Delimiters;
+import dev.xframe.jdbc.codec.FieldCodec;
 
 /**
  * 使用分隔符 Array与String之间有相互编码
@@ -14,14 +17,16 @@ public abstract class ArrayCodec<T> implements FieldCodec<T, String>, ElementCod
         return c.isArray() && !(c.equals(byte[].class) || c.equals(Byte[].class) || c.equals(char[].class) || c.equals(Character[].class));
     }
     
-    @SuppressWarnings({ "unchecked"})
-    public static <T> FieldCodec<T, String> fetchCodec(Field field) {
-    	int delVal = BasicCodecs.getCodecAnnVal(field);
-        return (FieldCodec<T, String>) fetchCodec0(field.getType(), Delimiters.getMajor(delVal), Delimiters.getMinor(delVal));
+    public static <T> FieldCodec<T, String> build(Field field) {
+    	return build(field.getType(), CodecUtils.getCodecAnnVal(field));
+    }
+    @SuppressWarnings("unchecked")
+    public static <T> FieldCodec<T, String> build(Class<?> clazz, int delimiters) {
+        return (FieldCodec<T, String>) build0(clazz, Delimiters.getMajor(delimiters), Delimiters.getMinor(delimiters));
     }
     
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    protected static FieldCodec<?, String> fetchCodec0(Class<?> clazz, final String delimiter1, final String delimiter2) {
+    protected static FieldCodec<?, String> build0(Class<?> clazz, final String delimiter1, final String delimiter2) {
         Class<?> type = clazz;
         Class<?> componentType = clazz.getComponentType();
         boolean isDoubleDimensionalArray = false;;
@@ -32,10 +37,10 @@ public abstract class ArrayCodec<T> implements FieldCodec<T, String>, ElementCod
         }//最多只支持两层
         
         ArrayCodec<?> codec = componentType.isPrimitive() ?
-            new PrimitiveArrayCodec(BasicCodecs.getCollectionFactory(type), BasicCodecs.getPrimitiveCodec(type), delimiter1) :
-            new ObjectArrayCodec(BasicCodecs.getCollectionFactory(type), BasicCodecs.getElementCodec(componentType), delimiter1);
+            new PrimitiveArrayCodec(CodecUtils.getCollectionFactory(type), CodecUtils.getPrimitiveCodec(type), delimiter1) :
+            new ObjectArrayCodec(CodecUtils.getCollectionFactory(type), CodecUtils.getElementCodec(componentType), delimiter1);
         
-        return isDoubleDimensionalArray ? new ObjectArrayCodec(BasicCodecs.getCollectionFactory(clazz), codec, delimiter2) : codec;
+        return isDoubleDimensionalArray ? new ObjectArrayCodec(CodecUtils.getCollectionFactory(clazz), codec, delimiter2) : codec;
     }
     
     static boolean isEmpty(String src) {

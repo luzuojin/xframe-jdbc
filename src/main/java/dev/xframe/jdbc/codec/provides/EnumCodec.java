@@ -1,7 +1,10 @@
-package dev.xframe.jdbc.codec;
+package dev.xframe.jdbc.codec.provides;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import dev.xframe.jdbc.codec.Codec;
+import dev.xframe.jdbc.codec.FieldCodec;
 
 /**
  * 包含@Codec的enum与int之间的相互转换工具类
@@ -39,11 +42,11 @@ public class EnumCodec implements FieldCodec<Enum<?>, Integer> {
     
 	@SuppressWarnings("unchecked")
     public static <V extends Enum<?>> V decode (Class<V> type, int code) {
-	    return (V) fetchCodec(type).decode(code);
+	    return (V) build(type).decode(code);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static EnumCodec fetchCodec(Class<?> clazz) {
+	public static EnumCodec build(Class<?> clazz) {
 	    EnumCodec enumCodec = caches.get(clazz);
 	    if(enumCodec == null) {
 	        enumCodec = new EnumCodec((Class<? extends Enum<?>>) clazz);
