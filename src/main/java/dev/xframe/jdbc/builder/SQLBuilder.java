@@ -37,11 +37,11 @@ public class SQLBuilder {
         return "INSERT INTO " + ftable.tableName + " (" + insertPre + ") VALUES (" + insertEnd + ")";
 	}
     
-	public static <T> SQL<T> buildInstupSQL(SQLFactory<T> factory, FTable ftable) throws Exception {
+	public static <T> SQL<T> buildUpsertSQL(SQLFactory<T> factory, FTable ftable) throws Exception {
         if(ftable.hasOnlyOneUniqueIndex() && ftable.hasColumnNotInUniqueIndex()) {
             String upt = join(",", ftable.columns.stream().filter(f->!ftable.primaryKeys.contains(f)).map(f->f.dbColumn.quoteName()+"=VALUES("+f.dbColumn.quoteName()+")"));
             String sql = buildInsertSQLStr(ftable) + " ON DUPLICATE KEY UPDATE " + upt;
-            return factory.newSQL(Option.INSTUP, sql.toString(), ftable.batchLimit(ftable.columns.size()), CodecBuilder.buildSetter(ftable, ftable.columns), null);
+            return factory.newSQL(Option.UPSERT, sql.toString(), ftable.batchLimit(ftable.columns.size()), CodecBuilder.buildSetter(ftable, ftable.columns), null);
         }
         return new NilSQL<>(String.format("Table[%s] unique index is empty or not only", ftable.tableName));
     }

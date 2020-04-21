@@ -11,7 +11,7 @@ JdbcEnviron.getConfigurator()
     .setFieldCodec(codec)
     .setAsyncThreads(nthreads)
     .setDelimiters(major, minor)
-    .setInstupUsage(_insert, _update)
+    .setUpsertUsage(_insert, _update)
     .setDataSource(dbkey, dataSource)
     
 //default supported jdbc pool
@@ -25,7 +25,7 @@ TypeQuery<T> query = TypeQuery.newBuilder(T.class)
                             .setTypeHandler(typeHandler)
                             .setSQL(0, TypeSQL.where().EQ("id").select())
                             .setAsyncModel(false)
-                            .setInstupUsage(0)
+                            .setUpsertUsage(0)
                             .build()
 
 T one = query.fetchOne(PSSetter.of(key))
@@ -35,7 +35,7 @@ List<T> list = query.fetchall()
 
 query.update(T)
 query.insert(T)
-query.instup(T)     (insert on duplicate key update)
+query.upsert(T)     (insert on duplicate key update)
 ```
 #### tools
 ```

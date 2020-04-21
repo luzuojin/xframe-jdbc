@@ -44,15 +44,15 @@ public class TypeQuery<T> {
         return insert.insertAndIncrement(obj);
     }
 	
-	private SQL<T> instup;
-    public boolean instup(T obj) {
-        return instup.update(obj);
+	private SQL<T> upsert;
+    public boolean upsert(T obj) {
+        return upsert.update(obj);
     }
-    public boolean instupBatch(T[] objs) {
-        return instup.updateBatch(objs);
+    public boolean upsertBatch(T[] objs) {
+        return upsert.updateBatch(objs);
     }
-    public boolean instupBatch(Collection<T> objs) {
-        return instup.updateBatch(objs);
+    public boolean upsertBatch(Collection<T> objs) {
+        return upsert.updateBatch(objs);
     }
 	
 	private SQL<T> update;
@@ -92,8 +92,8 @@ public class TypeQuery<T> {
 			query.insert = sql;
 			return this;
 		}
-		public SQLSetter<T> setInstup(TypeQuery<T> query, SQL<T> sql) {
-			query.instup = sql;
+		public SQLSetter<T> setUpsert(TypeQuery<T> query, SQL<T> sql) {
+			query.upsert = sql;
 			return this;
 		}
 		public SQLSetter<T> setUpdate(TypeQuery<T> query, SQL<T> sql) {

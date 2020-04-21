@@ -13,7 +13,7 @@ import dev.xframe.jdbc.PSSetter;
 public interface SQL<T> {
 	
 	public static enum Option {
-		SELECT(0), INSERT(1), UPDATE(2), INSTUP(3), DELETE(4);
+		SELECT(0), INSERT(1), UPDATE(2), UPSERT(3), DELETE(4);
         public final int code;
         private Option(int code) {this.code = code;}
     }

@@ -50,7 +50,7 @@ public class TypeQueryTest implements DBIdent {
         String user = "embed";
         String pass = "embed";
         JdbcEnviron.getConfigurator()
-                .setInstupUsage(false, false)
+                .setUpsertUsage(false, false)
                 .setDatasource(this, DataSources.tomcatJdbc(new DBSource(user, pass, driver, dburl, 1, 1)));
         
         String script = ""

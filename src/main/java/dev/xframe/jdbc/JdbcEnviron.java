@@ -20,7 +20,7 @@ public class JdbcEnviron {
 	
 	static Map<DBIdent, JdbcTemplate> jdbcTemplates = new HashMap<>();
 	
-	static int instupUsage;
+	static int upsertUsage;
 	
 	static Function<String, String> fieldMapper = Function.identity();
 	
@@ -61,9 +61,9 @@ public class JdbcEnviron {
 		/**
 		 * @param usage: 0 self, 1 insert, 2 update
 		 */
-		public EnvironConfigurator setInstupUsage(boolean insert, boolean update) {
-			instupUsage += (insert ? 1 : 0);
-			instupUsage += (update ? 2 : 0);
+		public EnvironConfigurator setUpsertUsage(boolean insert, boolean update) {
+			upsertUsage += (insert ? 1 : 0);
+			upsertUsage += (update ? 2 : 0);
 			return this;
 		}
 		
@@ -106,8 +106,8 @@ public class JdbcEnviron {
 		return jdbcTemplates.get(ident);
 	}
 
-	public static int getInstupUsage() {
-		return instupUsage;
+	public static int getUpsertUsage() {
+		return upsertUsage;
 	}
 
 }

@@ -36,7 +36,7 @@ public class QueryBuilder<T> {
 
 	private int asyncModel = -1;
 	
-	private int instupUsage = -1;
+	private int upsertUsage = -1;
 	
 	private int ignore = 0;
 	
@@ -89,7 +89,7 @@ public class QueryBuilder<T> {
 	
 	/**
 	 * 1 << 0	insert
-	 * 1 << 1	instup
+	 * 1 << 1	upsert
 	 * 1 << 2	update
 	 * 1 << 3	delete
 	 * 1 << 4	qrykey
@@ -104,15 +104,15 @@ public class QueryBuilder<T> {
 		return this;
 	}
 	
-	public QueryBuilder<T> setInstupUsage(boolean insert, boolean update) {
-		this.instupUsage = 0;
-		this.instupUsage += (insert ? 1 : 0);
-		this.instupUsage += (update ? 2 : 0);
+	public QueryBuilder<T> setUpsertUsage(boolean insert, boolean update) {
+		this.upsertUsage = 0;
+		this.upsertUsage += (insert ? 1 : 0);
+		this.upsertUsage += (update ? 2 : 0);
 		return this;
 	}
 	
-	private int getInstupUsage() {
-		return this.instupUsage == -1 ? JdbcEnviron.getInstupUsage() : this.instupUsage;
+	private int getUpsertUsage() {
+		return this.upsertUsage == -1 ? JdbcEnviron.getUpsertUsage() : this.upsertUsage;
 	}
 	
 	public TypeQuery<T> build() {
@@ -130,13 +130,13 @@ public class QueryBuilder<T> {
 			
 			SQLFactory<T> factory = new SQLFactory<>(isAsyncModel(), jdbcTemplate);
 			
-			SQL<T> instup = SQLBuilder.buildInstupSQL(factory, ftable);
+			SQL<T> upsert = SQLBuilder.buildUpsertSQL(factory, ftable);
 			if((ignore & (1 << 0)) == 0)
-				setter.setInsert(query, (getInstupUsage() & 1) > 0 ? instup : SQLBuilder.buildInsertSQL(factory, ftable));
+				setter.setInsert(query, (getUpsertUsage() & 1) > 0 ? upsert : SQLBuilder.buildInsertSQL(factory, ftable));
 			if((ignore & (1 << 1)) == 0)
-				setter.setInstup(query, instup);
+				setter.setUpsert(query, upsert);
 			if((ignore & (1 << 2)) == 0)
-				setter.setUpdate(query, (getInstupUsage() & 2) > 1 ? instup : SQLBuilder.buildUpdateSQL(factory, ftable));
+				setter.setUpdate(query, (getUpsertUsage() & 2) > 1 ? upsert : SQLBuilder.buildUpdateSQL(factory, ftable));
 			if((ignore & (1 << 3)) == 0)
 				setter.setDelete(query, SQLBuilder.buildDeleteSQL(factory, ftable));
 			if((ignore & (1 << 4)) == 0)
