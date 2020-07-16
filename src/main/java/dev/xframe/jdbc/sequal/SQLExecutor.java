@@ -62,7 +62,7 @@ public class SQLExecutor {
     }
     
     public boolean isShutdown() {
-        return isRunning.get();
+        return !isRunning.get();
     }
     
 }
