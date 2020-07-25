@@ -1,10 +1,13 @@
 package dev.xframe.jdbc.sequal;
 
+import static dev.xframe.jdbc.sequal.internal.InternalExecutorFactory.getQueue;
+import static dev.xframe.jdbc.sequal.internal.InternalExecutorFactory.newExecutor;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.IntFunction;
-
-import dev.xframe.jdbc.sequal.internal.InternalExecutorFactory;
 
 public class SQLExecutor {
     
@@ -31,7 +34,7 @@ public class SQLExecutor {
 	private ExecutorService[] newExecutors(int nThreads) {
 		ExecutorService[] array = new ExecutorService[nThreads];
         for (int i = 0; i < nThreads; i++) {
-        	array[i] = InternalExecutorFactory.newExecutor();
+        	array[i] = newExecutor();
         }
 		return array;
 	}
@@ -55,11 +58,21 @@ public class SQLExecutor {
 
     public void shutdown() {
     	if(isRunning.compareAndSet(true, false)) {
+    		Thread w = Thread.currentThread();
+    		AtomicInteger c = new AtomicInteger(executors.length);
+    		Runnable t = completionTask(w, c);
     		for (ExecutorService exec : executors) {
     			exec.shutdown();
+    			getQueue(exec).offer(t);//offer latest task
     		}
+    		LockSupport.park(this);//waiting all tasks completion
     	}
     }
+	private Runnable completionTask(Thread w, AtomicInteger c) {
+		return () -> {
+			if (c.decrementAndGet() == 0) LockSupport.unpark(w);
+		};
+	}
     
     public boolean isShutdown() {
         return !isRunning.get();

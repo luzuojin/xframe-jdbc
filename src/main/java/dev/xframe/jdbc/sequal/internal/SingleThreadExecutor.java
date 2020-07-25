@@ -327,6 +327,10 @@ public class SingleThreadExecutor implements ExecutorService {
         return Collections.emptyList();
     }
 
+    public BlockingQueue<Runnable> getQueue() {
+		return taskQueue;
+	}
+    
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
         throw new UnsupportedOperationException();

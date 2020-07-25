@@ -1,5 +1,6 @@
 package dev.xframe.jdbc.sequal.internal;
 
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -18,5 +19,9 @@ public class InternalExecutorFactory {
     private static SingleThreadExecutor newInternalExecutor() {
         return new SingleThreadExecutor(new InternalThreadFactory(), new MpscLinkedBlockingQueue<>(), (r, e) -> r.run());
     }
+
+	public static BlockingQueue<Runnable> getQueue(ExecutorService exec) {
+		return (exec instanceof SingleThreadExecutor) ? ((SingleThreadExecutor) exec).getQueue() : ((ThreadPoolExecutor) exec).getQueue();
+	}
 
 }
