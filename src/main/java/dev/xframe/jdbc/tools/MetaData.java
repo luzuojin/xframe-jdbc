@@ -58,7 +58,7 @@ public class MetaData {
         try {
             conn = jdbc.dataSource.getConnection();
             DatabaseMetaData metaData = conn.getMetaData();
-            ResultSet indexes = metaData.getIndexInfo(null, null, name, false, false);
+            ResultSet indexes = metaData.getIndexInfo(conn.getCatalog(), conn.getSchema(), name, false, false);
             while(indexes.next()) {
                 String indexName = indexes.getString("INDEX_NAME");
                 Column column = table.columns.get(indexes.getString("COLUMN_NAME"));

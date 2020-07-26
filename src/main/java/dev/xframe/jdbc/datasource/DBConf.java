@@ -1,5 +1,8 @@
 package dev.xframe.jdbc.datasource;
 
+import java.sql.Driver;
+import java.util.Iterator;
+import java.util.ServiceLoader;
 
 /**
  * 编码使用utf8
@@ -68,9 +71,16 @@ public class DBConf {
         return true;
     }
     
-    static final String mysql_template = "jdbc:mysql://%s:%s/%s?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&useServerPrepStmts=true&rewriteBatchedStatements=true";
-    DBSource toMysqlSource() {
-    	return new DBSource(user, pass, "com.mysql.jdbc.Driver", String.format(mysql_template, host, port, name), minconn, maxconn);
+    protected static final String mysql_template = "jdbc:mysql://%s:%s/%s?characterEncoding=utf-8&autoReconnect=true&failOverReadOnly=false&useServerPrepStmts=true&rewriteBatchedStatements=true";
+    protected DBSource toDBSource() {//default mysql
+    	return new DBSource(user, pass, driverName(), String.format(mysql_template, host, port, name), minconn, maxconn);
     }
+	protected String driverName() {
+		String driver = "com.mysql.jdbc.Driver";
+    	Iterator<Driver> it = ServiceLoader.load(Driver.class).iterator();
+    	if(it.hasNext())
+    		driver = it.next().getClass().getName();
+    	return driver;
+	}
 	
 }

@@ -7,7 +7,7 @@ import org.apache.tomcat.jdbc.pool.PoolProperties;
 public class DataSources {
 	
 	public static DataSource tomcatJdbc(DBConf conf) {
-		return tomcatJdbc(conf.toMysqlSource());
+		return tomcatJdbc(conf.toDBSource());
 	}
 
 	public static DataSource tomcatJdbc(DBSource source) {

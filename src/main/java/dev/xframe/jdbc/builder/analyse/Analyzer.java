@@ -207,12 +207,12 @@ public class Analyzer {
 		Connection conn = null;
         try {
             conn = jdbcTemplate.dataSource.getConnection();
-            ResultSet primaryKeys = conn.getMetaData().getPrimaryKeys(null, null, tableName);
+            ResultSet primaryKeys = conn.getMetaData().getPrimaryKeys(conn.getCatalog(), conn.getSchema(), tableName);
             while(primaryKeys.next()) {
             	table.primaryKeys.add(table.getDBColumn(primaryKeys.getString("COLUMN_NAME")).withPKSEQ(primaryKeys.getInt("KEY_SEQ")));
             }
             Collections.sort(table.primaryKeys, (k1, k2)->Integer.compare(k1.pkSEQ, k2.pkSEQ));
-            ResultSet uniqueIndexs = conn.getMetaData().getIndexInfo(null, null, tableName, false, false);
+            ResultSet uniqueIndexs = conn.getMetaData().getIndexInfo(conn.getCatalog(), conn.getSchema(), tableName, false, false);
             while(uniqueIndexs.next()) {
                 table.addDBIndex(uniqueIndexs.getString("INDEX_NAME"), uniqueIndexs.getBoolean("NON_UNIQUE"), table.getDBColumn(uniqueIndexs.getString("COLUMN_NAME")));
             }
