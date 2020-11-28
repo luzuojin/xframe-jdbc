@@ -459,7 +459,7 @@ public class JdbcTemplate {
         long end = System.currentTimeMillis();      
         long spendTime = end - first;
         if (spendTime > 1000) {
-            logger.error(String.format("执行语句%s花耗时间总时间 超过:%sms,获取连接：%sms,执行sql:%sms", sql, spendTime, second - first, end - second));
+            logger.warn(String.format("执行语句%s花耗时间总时间 超过:%sms,获取连接：%sms,执行sql:%sms", sql, spendTime, second - first, end - second));
         }
     }
     
