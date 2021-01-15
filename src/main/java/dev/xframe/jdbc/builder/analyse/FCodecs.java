@@ -10,18 +10,18 @@ public class FCodecs {
 	
 	private Map<String, FieldCodec<?, ?>> codecs = new HashMap<>();
 	
-	private TypeHandler<?> typeParser;
+	private TypeHandler<?> typeHandler;
 	
 	public TypeHandler<?> getTypeHandler() {
-        return typeParser;
+        return typeHandler;
     }
 
     public void setTypeHandler(TypeHandler<?> typeHandler) {
-        this.typeParser = typeHandler;
+        this.typeHandler = typeHandler;
     }
     
     public boolean hasTypeHandler() {
-        return this.typeParser != null;
+        return this.typeHandler != null;
     }
     
     public void put(String fieldName, FieldCodec<?, ?> codec) {

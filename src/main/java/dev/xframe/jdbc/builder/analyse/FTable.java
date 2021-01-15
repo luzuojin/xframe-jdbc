@@ -42,4 +42,8 @@ public class FTable {
 	public int batchLimit(int placeHolderCount) {
 	    return Math.min(65535/Math.max(1, placeHolderCount), 2048);
 	}
+    public void setTypeHandler(TypeHandler<?> typeHandler) {
+        this.typeHandler = typeHandler;
+        this.codecs.setTypeHandler(typeHandler);
+    }
 }

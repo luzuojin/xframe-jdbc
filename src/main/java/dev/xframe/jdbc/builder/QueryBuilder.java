@@ -123,7 +123,7 @@ public class QueryBuilder<T> {
 			JdbcTemplate jdbcTemplate = JdbcEnviron.getJdbcTemplate(dbKey);
 			
 			FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMapper, fieldCodecs);
-			ftable.codecs.setTypeHandler(typeHandler);
+			ftable.setTypeHandler(typeHandler);
 			
 			TypeQuery<T> query = new TypeQuery<>();
 			SQLSetter<T> setter = new SQLSetter<>();

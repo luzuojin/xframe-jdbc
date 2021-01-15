@@ -26,7 +26,7 @@ import javassist.CtNewMethod;
  */
 @SuppressWarnings("unchecked")
 public class DynamicCodes {
-	
+    
 	private static AtomicInteger suffix = new AtomicInteger(0);
     private static String suffix(boolean full) {
         return full ? "F" : String.valueOf(suffix.incrementAndGet());
@@ -45,7 +45,7 @@ public class DynamicCodes {
     		
     		StringBuilder body = new StringBuilder("{");
     		if(ftable.typeHandler != null) {
-    			body.append(clazzName).append(" _tmp_ = (").append(clazzName).append(")this.").append(typeHandlerFieldName()).append(".apply(").append("$1").append(");")
+    			body.append(clazzName).append(" _tmp_ = (").append(clazzName).append(")this.").append(typeHandlerFieldName()).append(".make(").append("$1").append(");")
     			.append("if(_tmp_ == null) {")
     			.append("_tmp_ = new ").append(clazzName).append("();")
     			.append("}");
