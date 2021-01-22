@@ -144,9 +144,10 @@ class XGeneric {
         
         Class<?>[] bpcs = lambdaBased.getParameterTypes();
         Type[] spcs = lambdaSuper.getGenericParameterTypes();
-        for (int i = 0; i < bpcs.length; i++) {
+        int offset = bpcs.length - spcs.length;
+        for (int i = 0; i < spcs.length; i++) {
             if(spcs[i] instanceof TypeVariable<?>) {
-                map.put(keyName(superClazz, (TypeVariable<?>) spcs[i]), bpcs[i]);
+                map.put(keyName(superClazz, (TypeVariable<?>) spcs[i]), bpcs[i+offset]);
             }
         }
         return superClazz;
