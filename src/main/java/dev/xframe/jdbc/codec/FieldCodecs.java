@@ -51,7 +51,7 @@ public class FieldCodecs {
 		add(fType.getName(), fc);
 	}
 	public void add(String name, FieldCodec<?, ?> fc) {
-		fcs.put(name, fc);
+		fcs.put(name.toLowerCase(), fc);
 	}
 
     public void add(Function<?, ?> getter, FieldCodec<?, ?> fieldCodec) {
