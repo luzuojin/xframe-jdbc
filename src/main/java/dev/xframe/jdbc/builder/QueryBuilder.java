@@ -32,7 +32,7 @@ public class QueryBuilder<T> {
 	//field name or class name
 	private FieldCodecs fieldCodecs = new FieldCodecs();
 	
-	private Map<String, String> fieldMapper = new HashMap<>();
+	private Map<String, String> fieldMappings = new HashMap<>();
 
 	private int asyncModel = -1;
 	
@@ -57,11 +57,15 @@ public class QueryBuilder<T> {
 		return this;
 	}
 	
+	public QueryBuilder<T> setMapping(String fieldName, String columnName) {
+	    this.fieldMappings.put(fieldName, columnName);
+	    return this;
+	}
+	
 	public QueryBuilder<T> setFieldCodec(String fieldName, FieldCodec<?, ?> fieldCodec) {
 		this.fieldCodecs.add(fieldName, fieldCodec);
 		return this;
 	}
-	
 	public QueryBuilder<T> setFieldCodec(Class<?> fieldType, FieldCodec<?, ?> fieldCodec) {
 		this.fieldCodecs.add(fieldType, fieldCodec);
 		return this;
@@ -122,7 +126,7 @@ public class QueryBuilder<T> {
 		    
 			JdbcTemplate jdbcTemplate = JdbcEnviron.getJdbcTemplate(dbKey);
 			
-			FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMapper, fieldCodecs);
+			FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMappings, fieldCodecs);
 			ftable.setTypeHandler(typeHandler);
 			
 			TypeQuery<T> query = new TypeQuery<>();
