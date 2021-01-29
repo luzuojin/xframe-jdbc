@@ -36,7 +36,9 @@ public class EnumCodec implements FieldCodec<Enum<?>, Integer> {
 
     @Override
     public Enum<?> decode(Integer columnValue) {
-        return key_cache.get(columnValue);
+        //use 0 instead null as default value
+        Integer code = columnValue == null ? 0 : columnValue;
+        return key_cache.get(code);
     }
     
     private static Map<Class<?>, EnumCodec> caches = new HashMap<Class<?>, EnumCodec>();

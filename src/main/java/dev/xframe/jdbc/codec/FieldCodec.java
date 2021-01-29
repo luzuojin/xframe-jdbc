@@ -2,23 +2,28 @@ package dev.xframe.jdbc.codec;
 
 import java.util.function.Function;
 
+/**
+ * @author luzj
+ * @param <F>
+ * @param <C> 如果是基础类型的转换,需求处理好默认值(ResultSet.getObject中数据库中为null时默认值是null而不是0)
+ */
 public interface FieldCodec<F, C> {
 	
     C encode(F fieldValue);
     F decode(C columnValue);
     
     default Class<?> getColumnActualType() {
-        return XGeneric.get(getClass(), FieldCodec.class, 1);
+        return InternalGeneric.get(getClass(), FieldCodec.class, 1);
     }
 
     public static <F, C> FieldCodec<F, C> ofEncoder(Function<F, C> encoder) {
-        return new CompositFieldCodec<>(encoder, null, XGeneric.get(encoder.getClass(), Function.class, 1));
+        return new CompositFieldCodec<>(encoder, null, InternalGeneric.get(encoder.getClass(), Function.class, 1));
     }
     public static <F, C> FieldCodec<F, C> ofDecoder(Function<C, F> decoder) {
-        return new CompositFieldCodec<>(null, decoder, XGeneric.get(decoder.getClass(), Function.class, 0));
+        return new CompositFieldCodec<>(null, decoder, InternalGeneric.get(decoder.getClass(), Function.class, 0));
     }
     public static <F, C> FieldCodec<F, C> of(Function<F, C> encoder, Function<C, F> decoder) {
-        return new CompositFieldCodec<>(encoder, decoder, XGeneric.get(encoder.getClass(), Function.class, 1));
+        return new CompositFieldCodec<>(encoder, decoder, InternalGeneric.get(encoder.getClass(), Function.class, 1));
     }
     
     static class CompositFieldCodec<F, C> implements FieldCodec<F, C> {

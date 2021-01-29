@@ -12,7 +12,6 @@ import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypePSSetter;
 import dev.xframe.jdbc.builder.analyse.FColumn;
 import dev.xframe.jdbc.builder.analyse.FTable;
-import dev.xframe.jdbc.builder.javassist.DynamicCodes;
 import dev.xframe.jdbc.codec.transfer.Exporter;
 import dev.xframe.jdbc.codec.transfer.Exporters;
 import dev.xframe.jdbc.codec.transfer.Importer;
@@ -21,18 +20,7 @@ import dev.xframe.jdbc.codec.transfer.Importers;
 @SuppressWarnings({"unchecked"})
 public class CodecBuilder {
 	
-	static boolean useDynamicCode() {
-		try {
-			Class.forName("javassist.ClassPool");
-			return true;
-		} catch (ClassNotFoundException e) {
-			return false;
-		}
-	}
-	
 	static <T> RSParser<T> buildParser(FTable ftable, List<FColumn> columns) throws Exception {
-		if(useDynamicCode())
-			return DynamicCodes.makeParser(ftable, columns);
 		Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(ftable, columns.get(i), i+1)).toArray(Importer[]::new);
 		return new FieldsRSParser<>(castFactory(ftable.typeFactory, ftable.clazz), castHandler(ftable.typeHandler), fields); 
 	}
@@ -49,8 +37,6 @@ public class CodecBuilder {
     }
 
     static <T> TypePSSetter<T> buildSetter(FTable ftable, List<FColumn> columns) throws Exception {
-    	if(useDynamicCode())
-    		return DynamicCodes.makeSetter(ftable, columns);
     	Exporter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeExporter(ftable, columns.get(i), i+1)).toArray(Exporter[]::new);
     	return new FieldsTypePSSetter<>(fields);
     }

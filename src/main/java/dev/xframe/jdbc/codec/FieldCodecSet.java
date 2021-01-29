@@ -75,10 +75,10 @@ public interface FieldCodecSet {
             add0(f->f.getName().equalsIgnoreCase(name), fc);
         }
         public void add(Function<?, ?> getter, FieldCodec<?, ?> fc) {
-            addByGetterMethod(XGeneric.getLambdaBasedMethod(getter.getClass()), fc);
+            addByGetterMethod(InternalGeneric.getLambdaImplMethod(getter.getClass()), fc);
         }
         public void add(Function<?, ?> getter, int delimiters) {//use provided codecs
-            Method method = XGeneric.getLambdaBasedMethod(getter.getClass());
+            Method method = InternalGeneric.getLambdaImplMethod(getter.getClass());
             Class<?> rtype = method.getReturnType();//array or list/set
             addByGetterMethod(method, rtype.isArray() ? ArrayCodec.build(rtype, delimiters) : ListSetCodec.build(rtype, method.getGenericReturnType(), delimiters));
         }
