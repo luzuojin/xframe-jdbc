@@ -6,24 +6,10 @@ import java.util.Map;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.codec.FieldCodec;
 
-public class FCodecs {
+public class FCodecSet {
 	
 	private Map<String, FieldCodec<?, ?>> codecs = new HashMap<>();
 	
-	private TypeHandler<?> typeHandler;
-	
-	public TypeHandler<?> getTypeHandler() {
-        return typeHandler;
-    }
-
-    public void setTypeHandler(TypeHandler<?> typeHandler) {
-        this.typeHandler = typeHandler;
-    }
-    
-    public boolean hasTypeHandler() {
-        return this.typeHandler != null;
-    }
-    
     public void put(String fieldName, FieldCodec<?, ?> codec) {
 		codecs.put(fieldName, codec);
 	}
@@ -43,5 +29,21 @@ public class FCodecs {
 	public Map<String, FieldCodec<?, ?>> get() {
 		return codecs;
 	}
+	
+	//for instance
+	private TypeHandler<?> typeFactory;
+    private TypeHandler<?> typeHandler;
+    public TypeHandler<?> getTypeHandler() {
+        return typeHandler;
+    }
+    public void setTypeHandler(TypeHandler<?> typeHandler) {
+        this.typeHandler = typeHandler;
+    }
+    public TypeHandler<?> getTypeFactory() {
+        return typeFactory;
+    }
+    public void setTypeFactory(TypeHandler<?> typeFactory) {
+        this.typeFactory = typeFactory;
+    }
 	
 }

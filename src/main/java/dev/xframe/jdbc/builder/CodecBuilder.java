@@ -1,20 +1,24 @@
 package dev.xframe.jdbc.builder;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import dev.xframe.jdbc.RSParser;
+import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypePSSetter;
 import dev.xframe.jdbc.builder.analyse.FColumn;
 import dev.xframe.jdbc.builder.analyse.FTable;
 import dev.xframe.jdbc.builder.javassist.DynamicCodes;
-import dev.xframe.jdbc.codec.FieldCodec;
+import dev.xframe.jdbc.codec.transfer.Exporter;
+import dev.xframe.jdbc.codec.transfer.Exporters;
+import dev.xframe.jdbc.codec.transfer.Importer;
+import dev.xframe.jdbc.codec.transfer.Importers;
 
-@SuppressWarnings({"rawtypes","unchecked"})
+@SuppressWarnings({"unchecked"})
 public class CodecBuilder {
 	
 	static boolean useDynamicCode() {
@@ -29,91 +33,80 @@ public class CodecBuilder {
 	static <T> RSParser<T> buildParser(FTable ftable, List<FColumn> columns) throws Exception {
 		if(useDynamicCode())
 			return DynamicCodes.makeParser(ftable, columns);
-		
-		XField[] fields = columns.stream().map(c->new XField(c.jColumn.field, ftable.codecs.get(c.jColumn.name))).toArray(len->new XField[len]);
-		return new FieldsRSParser<>(new SimpleTypeHandler<>(ftable.clazz, ftable.typeHandler), fields); 
+		Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(ftable, columns.get(i), i+1)).toArray(Importer[]::new);
+		return new FieldsRSParser<>(castFactory(ftable.typeFactory, ftable.clazz), castHandler(ftable.typeHandler), fields); 
 	}
 	
+    static <T> TypeFactory<T> castFactory(TypeFactory<?> typeFactory, Class<?> clazz) {
+        if(typeFactory == null) {
+            return new DefTypeFactory<>(clazz);
+        }
+        return (TypeFactory<T>) typeFactory;
+    }
+
+    static <T> TypeHandler<T> castHandler(TypeHandler<?> typeHandler) {
+        return (TypeHandler<T>) typeHandler;
+    }
+
     static <T> TypePSSetter<T> buildSetter(FTable ftable, List<FColumn> columns) throws Exception {
     	if(useDynamicCode())
     		return DynamicCodes.makeSetter(ftable, columns);
-
-    	XField[] fields = columns.stream().map(c->new XField(c.jColumn.field, ftable.codecs.get(c.jColumn.name))).toArray(len->new XField[len]);
+    	Exporter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeExporter(ftable, columns.get(i), i+1)).toArray(Exporter[]::new);
     	return new FieldsTypePSSetter<>(fields);
     }
 	
-	static class SimpleTypeHandler<T> implements TypeHandler<T> {
-		Constructor<T> constr;
-		TypeHandler<T> setted;
-		public SimpleTypeHandler(Class<?> clazz, TypeHandler<?> setted) {
-			try {
-				this.constr = (Constructor<T>) clazz.getDeclaredConstructor();
-				this.setted = (TypeHandler<T>) setted;
-				this.constr.setAccessible(true);
-			} catch (Exception e) {
-				throw new IllegalArgumentException(e);
-			}
-		}
-		public T make(ResultSet rs) throws Exception {
-			T obj = null;
-			if(setted != null) {
-				obj = setted.make(rs);
-			}
-			if(obj == null) {
-				obj = constr.newInstance();
-			}
-			return obj;
-		}
-		public void apply(T t) {
-			if(setted != null) setted.apply(t);
-		}
-	}
-	
-	static class XField {
-		final Field field;
-		final FieldCodec codec;
-		public XField(Field field, FieldCodec codec) {
-			this.field = field;
-			this.codec = codec;
-			this.field.setAccessible(true);
-		}
-		public Object getFrom(Object obj) throws Exception {
-			Object f = field.get(obj);
-			return codec == null ? f : codec.encode(f);
-		}
-		public void setTo(Object obj, Object f) throws Exception {
-			field.set(obj, codec == null ? f : codec.decode(f));
-		}
-	}
-	
+    static Importer makeImporter(FTable t, FColumn c, int columnIndex) {
+        return Importers.of(c.jColumn.field, columnIndex, t.codecs.get(c.jColumn.name));
+    }
+    static Exporter makeExporter(FTable t, FColumn c, int paramIndex) {
+        return Exporters.of(c.jColumn.field, paramIndex, t.codecs.get(c.jColumn.name));
+    }
+    
+    static class DefTypeFactory<T> implements TypeFactory<T> {
+        private Constructor<T> factory;
+        public DefTypeFactory(final Class<?> clazz) {
+            try {
+                Constructor<?> c = clazz.getConstructor();
+                c.setAccessible(true);
+                this.factory = (Constructor<T>) c;
+            } catch (Exception e) {
+                throw new IllegalArgumentException(e);
+            }
+        }
+        public T make(ResultSet rs) throws Exception {
+            return factory.newInstance();
+        }
+    }
+    
 	static class FieldsRSParser<T> implements RSParser<T> {
+	    final TypeFactory<T> factory;
 		final TypeHandler<T> handler;
-		final XField[] fields;
-		public FieldsRSParser(TypeHandler<T> handler, XField[] fields) {
+		final Importer[] fields;
+		public FieldsRSParser(TypeFactory<T> factory, TypeHandler<T> handler, Importer[] fields) {
+		    this.factory = factory;
 			this.handler = handler;
 			this.fields = fields;
 		}
-		@Override
 		public T parse(ResultSet rs) throws Exception {
-			T obj = handler.make(rs);
-			for (int i = 0; i < fields.length; i++) {
-				fields[i].setTo(obj, rs.getObject(i+1));
-			}
-			handler.apply(obj);
+			T obj = factory.make(rs);
+			for (Importer field : fields) {
+                field.imports(obj, rs);
+            }
+			if(handler != null) 
+			    handler.apply(obj);
 			return obj;
 		}
 	}
 	
 	static class FieldsTypePSSetter<T> implements TypePSSetter<T> {
-		final XField[] fields;
-		public FieldsTypePSSetter(XField[] fields) {
+		final Exporter[] fields;
+		public FieldsTypePSSetter(Exporter[] fields) {
 			this.fields = fields;
 		}
-		@Override
 		public void set(PreparedStatement pstmt, T obj) throws Exception {
-			for (int i = 0; i < fields.length; i++) {
-				pstmt.setObject(i+1, fields[i].getFrom(obj));
-			}
+		    for (Exporter field : fields) {
+                field.exports(obj, pstmt);
+            }
 		}
 	}
 

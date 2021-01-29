@@ -7,6 +7,7 @@ import java.util.function.Function;
 
 import dev.xframe.jdbc.JdbcEnviron;
 import dev.xframe.jdbc.JdbcTemplate;
+import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypeQuery;
 import dev.xframe.jdbc.TypeQuery.SQLSetter;
@@ -27,6 +28,7 @@ public class QueryBuilder<T> {
 	
 	protected String tableName;
 	
+	protected TypeFactory<T> typeFactory;
 	protected TypeHandler<T> typeHandler;
 	
 	//field name or class name
@@ -52,6 +54,10 @@ public class QueryBuilder<T> {
 		return this;
 	}
 	
+	public QueryBuilder<T> setTypeFactory(TypeFactory<T> typeFactory) {
+	    this.typeFactory = typeFactory;
+	    return this;
+	}
 	public QueryBuilder<T> setTypeHandler(TypeHandler<T> typeHandler) {
 		this.typeHandler = typeHandler;
 		return this;
@@ -128,6 +134,7 @@ public class QueryBuilder<T> {
 			FieldCodecSet fcSet = new FieldCodecSet.Chained(fieldCodecs, JdbcEnviron.getFieldCodecSet());
 			
             FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMappings, fcSet);
+            ftable.setTypeFactory(typeFactory);
 			ftable.setTypeHandler(typeHandler);
 			
 			TypeQuery<T> query = new TypeQuery<>();

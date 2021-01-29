@@ -8,7 +8,7 @@ import java.sql.Clob;
 import java.sql.Time;
 import java.sql.Timestamp;
 
-import dev.xframe.jdbc.builder.analyse.FCodecs;
+import dev.xframe.jdbc.builder.analyse.FCodecSet;
 import dev.xframe.jdbc.builder.analyse.FColumn;
 import dev.xframe.jdbc.builder.analyse.JColumn;
 
@@ -47,14 +47,14 @@ class FieldCodes {
     }
     
 	//setter
-	static <T> String makeSetterBodyElement(FCodecs codecs, FColumn fColumn, String type, String rs, int index) {
+	static <T> String makeSetterBodyElement(FCodecSet codecs, FColumn fColumn, String type, String rs, int index) {
 		return new StringBuilder()
 			.append(rs).append(".").append(psSetter(codecs, fColumn.jColumn)).append("(")
 			.append(index).append(", ").append(columnSetVal(codecs, type, fColumn.jColumn))
 			.append(");").toString();
 	}
 	
-	static <T> String columnSetVal(FCodecs codecs, String type, JColumn jColumn) {
+	static <T> String columnSetVal(FCodecSet codecs, String type, JColumn jColumn) {
 	    String val = fieldGetVal(type, jColumn);
 	    if(codecs.hasCodec(jColumn.name)) {//pstmt.setInt(1, (int)this.xxxCodec.encode((Integer)this.getXxx()))
 	        return objToPrimitiveCasting(codecs.getColumnActualType(jColumn.name), String.format("this.%s.encode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObjCasting(jColumn.type, val)));
@@ -73,7 +73,7 @@ class FieldCodes {
         return type + ".get" + specsName(jColumn.name) + "()";
 	}
 	
-	static <T> String psSetter(FCodecs codecs, JColumn jColumn) {
+	static <T> String psSetter(FCodecSet codecs, JColumn jColumn) {
 		Class<?> c = codecs.hasCodec(jColumn.name) ? codecs.getColumnActualType(jColumn.name) : jColumn.type;
         if(Boolean.class.equals(c) || boolean.class.equals(c)) {
             return "setBoolean";
@@ -117,7 +117,7 @@ class FieldCodes {
 	
 
 	//parser
-	static <T> String makeParserBodyElement(FCodecs codecs, FColumn fColumn, String type, String rs, int index) {
+	static <T> String makeParserBodyElement(FCodecSet codecs, FColumn fColumn, String type, String rs, int index) {
 		JColumn jColumn = fColumn.jColumn;
 		String val = fieldSetVal(codecs, rs, jColumn, index);
 		if(jColumn.setter != null) {
@@ -140,7 +140,7 @@ class FieldCodes {
 		return new StringBuilder().append(type).append(".").append(jColumn.name).append("=").append(get).append(";").toString();
 	}
 	
-	static <T> String fieldSetVal(FCodecs codecs, String rs, JColumn jColumn, int index) {
+	static <T> String fieldSetVal(FCodecSet codecs, String rs, JColumn jColumn, int index) {
 		String rsget = new StringBuilder().append(rs).append(".").append(rsGetter(codecs, jColumn)).append("(").append(index).append(")").toString();//rs.getInt(1)
 		if(codecs.hasCodec(jColumn.name)) {//(int) this.xxxCodec.decode((Integer)rs.getInt(1));
 			return objToPrimitive(jColumn.type, String.format("this.%s.decode(%s)", DynamicCodes.codecFieldName(jColumn.name), primitiveToObj(codecs.getColumnActualType(jColumn.name), rsget)));
@@ -148,7 +148,7 @@ class FieldCodes {
 		return primitiveToObj(jColumn.type, rsget);//(Integer) rs.getInt(1);
 	}
 
-	static <T> String rsGetter(FCodecs codecs, JColumn jColumn) {
+	static <T> String rsGetter(FCodecSet codecs, JColumn jColumn) {
 	    Class<?> c = codecs.hasCodec(jColumn.name) ? codecs.getColumnActualType(jColumn.name) : jColumn.type;
         if(Boolean.class.equals(c) || boolean.class.equals(c)) {
             return "getBoolean";

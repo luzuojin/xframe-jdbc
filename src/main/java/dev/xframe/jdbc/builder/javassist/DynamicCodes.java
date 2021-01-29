@@ -6,9 +6,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import dev.xframe.jdbc.RSParser;
+import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypePSSetter;
-import dev.xframe.jdbc.builder.analyse.FCodecs;
 import dev.xframe.jdbc.builder.analyse.FColumn;
 import dev.xframe.jdbc.builder.analyse.FTable;
 import dev.xframe.jdbc.codec.FieldCodec;
@@ -44,7 +44,7 @@ public class DynamicCodes {
     		clazz.addInterface(pool.getCtClass(RSParser.class.getName()));
     		
     		StringBuilder body = new StringBuilder("{");
-    		if(ftable.typeHandler != null) {
+    		if(ftable.hasTypeFactory()) {
     			body.append(clazzName).append(" _tmp_ = (").append(clazzName).append(")this.").append(typeHandlerFieldName()).append(".make(").append("$1").append(");")
     			.append("if(_tmp_ == null) {")
     			.append("_tmp_ = new ").append(clazzName).append("();")
@@ -59,12 +59,12 @@ public class DynamicCodes {
     			++index;
     		}
     		
-    		if(ftable.typeHandler != null) {
+    		if(ftable.hasTypeHandler()) {
     			body.append(typeHandlerFieldName()).append(".apply(").append("_tmp_").append(");");
     		}
     		body.append("return _tmp_;").append("}");
     		
-    		makeCodecFieldsAndConstructor(ftable.codecs, pool, clazz);//先解析columns才有codecFields, 先添加codecFields才能生成body
+    		makeCodecFieldsAndConstructor(ftable, pool, clazz);//先解析columns才有codecFields, 先添加codecFields才能生成body
     		
     		CtMethod parser = CtNewMethod.copy(pool.getMethod(RSParser.class.getName(), "parse"), clazz, null);
     		parser.setBody(body.toString());
@@ -73,15 +73,15 @@ public class DynamicCodes {
     		newClass = clazz.toClass();
     	}
         
-        return (RSParser<T>) newInstance(ftable.codecs, newClass);
+        return (RSParser<T>) newInstance(ftable, newClass);
     }
 
-    static <T> Object newInstance(FCodecs codecs, Class<?> clazz) throws Exception {
-        return clazz.getConstructor(FCodecs.class).newInstance(codecs);
+    static <T> Object newInstance(FTable fTable, Class<?> clazz) throws Exception {
+        return clazz.getConstructor(FTable.class).newInstance(fTable);
     }
     
-    static <T> void makeCodecFieldsAndConstructor(FCodecs codecs, ClassPool pool, CtClass clazz) throws Exception {
-        Map<String, FieldCodec<?, ?>> codeces = codecs.get();
+    static <T> void makeCodecFieldsAndConstructor(FTable fTable, ClassPool pool, CtClass clazz) throws Exception {
+        Map<String, FieldCodec<?, ?>> codeces = fTable.codecs.get();
         StringBuilder body = new StringBuilder("{");
         Set<String> keys = codeces.keySet();
         for (String key : keys) {
@@ -89,29 +89,39 @@ public class DynamicCodes {
             clazz.addField(cf);
             body.append(makeCodecAssignmentBody(key));
         }
-        if(codecs.hasTypeHandler()) {
+        if(fTable.hasTypeFactory()) {
+            CtField cf = CtField.make(makeTypeFactoryFieldBody(), clazz);
+            clazz.addField(cf);
+            body.append(makeTypeFactoryAssignmentBody());
+        }
+        if(fTable.hasTypeHandler()) {
             CtField cf = CtField.make(makeTypeHandlerFieldBody(), clazz);
             clazz.addField(cf);
-            body.append(makeTypeParserAssignmentBody());
+            body.append(makeTypeHanlderAssignmentBody());
         }
-        CtClass[] paramters = new CtClass[]{pool.get(FCodecs.class.getName())};
+        CtClass[] paramters = new CtClass[]{pool.get(FTable.class.getName())};
         CtConstructor ctConstructor = new CtConstructor(paramters, clazz);
         ctConstructor.setBody(body.append("}").toString());
         clazz.addConstructor(ctConstructor);
     }
     
+    static String makeTypeFactoryFieldBody() {
+        return new StringBuilder().append("private ").append(TypeFactory.class.getName()).append(" ").append(typeFactoryFieldName()).append(";").toString();
+    }
     static String makeTypeHandlerFieldBody() {
         return new StringBuilder().append("private ").append(TypeHandler.class.getName()).append(" ").append(typeHandlerFieldName()).append(";").toString();
     }
-    static String makeTypeParserAssignmentBody() {
-        return new StringBuilder().append("this.").append(typeHandlerFieldName()).append(" = $1.getTypeHandler();").toString();
+    static String makeTypeFactoryAssignmentBody() {
+        return new StringBuilder().append("this.").append(typeHandlerFieldName()).append(" = $1.typeFactory;").toString();
     }
-    
+    static String makeTypeHanlderAssignmentBody() {
+        return new StringBuilder().append("this.").append(typeHandlerFieldName()).append(" = $1.typeHandler;").toString();
+    }
     static String makeCodecFieldBody(String jfieldName) {
         return new StringBuilder().append("private ").append(FieldCodec.class.getName()).append(" ").append(codecFieldName(jfieldName)).append(";").toString();
     }
     static String makeCodecAssignmentBody(String jfieldName) {
-        return new StringBuilder().append("this.").append(codecFieldName(jfieldName)).append(" = (").append(FieldCodec.class.getName()).append(")$1.get(\"").append(jfieldName).append("\");").toString();
+        return new StringBuilder().append("this.").append(codecFieldName(jfieldName)).append(" = (").append(FieldCodec.class.getName()).append(")$1.codecs.get(\"").append(jfieldName).append("\");").toString();
     }
     
     public static <T> TypePSSetter<T> makeSetter(FTable ftable, List<FColumn> columns) throws Exception {
@@ -134,7 +144,7 @@ public class DynamicCodes {
     		}
     		body.append("}");
     		
-    		makeCodecFieldsAndConstructor(ftable.codecs, pool, clazz);//先解析columns才有codecFields, 先添加codecFields才能生成body
+    		makeCodecFieldsAndConstructor(ftable, pool, clazz);//先解析columns才有codecFields, 先添加codecFields才能生成body
     		
     		CtMethod setter = CtNewMethod.copy(pool.getMethod(TypePSSetter.class.getName(), "set"), clazz, null);
     		setter.setBody(body.toString());
@@ -142,7 +152,7 @@ public class DynamicCodes {
     		
     		newClass = clazz.toClass();
     	}
-        return (TypePSSetter<T>) newInstance(ftable.codecs, newClass);   
+        return (TypePSSetter<T>) newInstance(ftable, newClass);   
     }
 
     private static Class<?> defineClass(String name) {
@@ -152,6 +162,9 @@ public class DynamicCodes {
     	return null;
 	}
 
+    public static String typeFactoryFieldName() {
+        return "_typefactory";
+    }
 	public static String typeHandlerFieldName() {
         return "_typehandler";
     }

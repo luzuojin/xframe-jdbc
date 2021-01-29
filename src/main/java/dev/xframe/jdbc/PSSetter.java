@@ -17,7 +17,7 @@ public interface PSSetter {
 	}
 	
 	static PSSetter of(Object param1, Object param2) {
-		return new DoubleParamPSSetter(param1, param2);
+		return new PairParamPSSetter(param1, param2);
 	}
 	
 	static PSSetter of(Object... params) {
@@ -34,10 +34,10 @@ public interface PSSetter {
 			pstmt.setObject(1, param);
 		}
 	}
-	class DoubleParamPSSetter implements PSSetter {
+	class PairParamPSSetter implements PSSetter {
 		Object firstParam;
 		Object secondParam;
-		public DoubleParamPSSetter(Object firstParam, Object secondParam) {
+		public PairParamPSSetter(Object firstParam, Object secondParam) {
 			this.firstParam = firstParam;
 			this.secondParam = secondParam;
 		}

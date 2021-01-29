@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 
 /**
@@ -24,8 +25,9 @@ public class FTable {
 	
 	public Map<String, FColumn> columnMap = new HashMap<>();//key column name (lowercase)
 	
-	public FCodecs codecs = new FCodecs();
+	public FCodecSet codecs = new FCodecSet();
 	public TypeHandler<?> typeHandler;
+	public TypeFactory<?> typeFactory;
 	
 	public boolean hasPrimaryKey() {
 	    return this.primaryKeys.size() > 0;
@@ -42,8 +44,16 @@ public class FTable {
 	public int batchLimit(int placeHolderCount) {
 	    return Math.min(65535/Math.max(1, placeHolderCount), 2048);
 	}
+	public void setTypeFactory(TypeFactory<?> typeFactory) {
+	    this.typeFactory = typeFactory;
+	}
     public void setTypeHandler(TypeHandler<?> typeHandler) {
         this.typeHandler = typeHandler;
-        this.codecs.setTypeHandler(typeHandler);
+    }
+    public boolean hasTypeFactory() {
+        return typeFactory != null;
+    }
+    public boolean hasTypeHandler() {
+        return typeHandler != null;
     }
 }
