@@ -13,7 +13,7 @@ import dev.xframe.jdbc.TypeQuery.SQLSetter;
 import dev.xframe.jdbc.builder.analyse.Analyzer;
 import dev.xframe.jdbc.builder.analyse.FTable;
 import dev.xframe.jdbc.codec.FieldCodec;
-import dev.xframe.jdbc.codec.FieldCodecs;
+import dev.xframe.jdbc.codec.FieldCodecSet;
 import dev.xframe.jdbc.datasource.DBIdent;
 import dev.xframe.jdbc.sequal.SQL;
 import dev.xframe.jdbc.sequal.SQLFactory;
@@ -21,26 +21,26 @@ import dev.xframe.jdbc.sql.TypeSQL;
 
 public class QueryBuilder<T> {
 	
-	private Class<T> type;
+	protected Class<T> type;
 	
-	private DBIdent dbKey;
+	protected DBIdent dbKey;
 	
-	private String tableName;
+	protected String tableName;
 	
-	private TypeHandler<T> typeHandler;
+	protected TypeHandler<T> typeHandler;
 	
 	//field name or class name
-	private FieldCodecs fieldCodecs = new FieldCodecs();
-	
-	private Map<String, String> fieldMappings = new HashMap<>();
+	protected FieldCodecSet.Setting fieldCodecs = new FieldCodecSet.Setting();
 
-	private int asyncModel = -1;
+	protected Map<String, String> fieldMappings = new HashMap<>();
+
+	protected int asyncModel = -1;
 	
-	private int upsertUsage = -1;
+	protected int upsertUsage = -1;
 	
-	private int ignore = 0;
+	protected int ignore = 0;
 	
-	private TypeSQL[] tsqls = new TypeSQL[0];
+	protected TypeSQL[] tsqls = new TypeSQL[0];
 
 	public QueryBuilder(Class<T> clazz) {
 		this.type = clazz;
@@ -125,8 +125,9 @@ public class QueryBuilder<T> {
 		    if(tableName == null) throw new IllegalArgumentException("tableName is empty");
 		    
 			JdbcTemplate jdbcTemplate = JdbcEnviron.getJdbcTemplate(dbKey);
+			FieldCodecSet fcSet = new FieldCodecSet.Chained(fieldCodecs, JdbcEnviron.getFieldCodecSet());
 			
-			FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMappings, fieldCodecs);
+            FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMappings, fcSet);
 			ftable.setTypeHandler(typeHandler);
 			
 			TypeQuery<T> query = new TypeQuery<>();

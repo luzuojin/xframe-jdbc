@@ -18,7 +18,7 @@ import dev.xframe.jdbc.JdbcTemplate;
 import dev.xframe.jdbc.PSSetter;
 import dev.xframe.jdbc.RSParser;
 import dev.xframe.jdbc.codec.FieldCodec;
-import dev.xframe.jdbc.codec.FieldCodecs;
+import dev.xframe.jdbc.codec.FieldCodecSet;
 
 /**
  * 
@@ -31,7 +31,7 @@ public class Analyzer {
 	private static final String CONNECT_CLOSE = "关闭连接出错";
     private static final Logger logger = LoggerFactory.getLogger(Analyzer.class);
 
-    public static FTable analyze(Class<?> clazz, String tableName, JdbcTemplate jdbcTemplate, Map<String, String> mappings, FieldCodecs fieldCodecs) {
+    public static FTable analyze(Class<?> clazz, String tableName, JdbcTemplate jdbcTemplate, Map<String, String> mappings, FieldCodecSet fieldCodecs) {
         return analyze(analyze(clazz, mappings), analyze(jdbcTemplate, tableName), fieldCodecs);
     }
     
@@ -40,7 +40,7 @@ public class Analyzer {
      * @param dbtable
      * @param jtable
      */
-    private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecs fieldCodecs) {
+    private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecSet fieldCodecs) {
     	FTable fTable = new FTable();
     	fTable.clazz = jtable.clazz;
     	

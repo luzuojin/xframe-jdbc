@@ -10,7 +10,10 @@ import javax.sql.DataSource;
 
 import dev.xframe.jdbc.codec.Delimiters;
 import dev.xframe.jdbc.codec.FieldCodec;
-import dev.xframe.jdbc.codec.FieldCodecs;
+import dev.xframe.jdbc.codec.FieldCodecSet;
+import dev.xframe.jdbc.codec.provides.ArrayCodec;
+import dev.xframe.jdbc.codec.provides.EnumCodec;
+import dev.xframe.jdbc.codec.provides.ListSetCodec;
 import dev.xframe.jdbc.datasource.DBIdent;
 import dev.xframe.jdbc.sequal.SQLExecutor;
 
@@ -22,10 +25,16 @@ public class JdbcEnviron {
 	
 	static int upsertUsage;
 	
+	//默认支持: Enum(@Codec),Array,List,Set
+	static FieldCodecSet.Typed fcSet = new FieldCodecSet.Typed()
+                                	        .add(Class::isEnum, EnumCodec::build)
+                                	        .add(ArrayCodec::isArray, ArrayCodec::build)
+                                	        .add(ListSetCodec::isListOrSet, ListSetCodec::build);
+	
 	static Function<String, String> fieldMapper = Function.identity();
 	
 	static SQLExecutor executor;
-
+	
 	public static EnvironConfigurator getConfigurator() {
 		return new EnvironConfigurator();
 	}
@@ -79,14 +88,14 @@ public class JdbcEnviron {
 		/**
 		 * global field val & column val mapping
 		 * @param type
-		 * @param codec
+		 * @param fc
 		 */
-		public EnvironConfigurator setFieldCodec(Class<?> type, FieldCodec<?, ?> codec) {
-			FieldCodecs.addGlobal(type, codec);
+		public EnvironConfigurator setFieldCodec(Class<?> type, FieldCodec<?, ?> fc) {
+		    fcSet.add(type, f->fc);
 			return this;
 		}
 		public EnvironConfigurator setFieldCodec(Predicate<Class<?>> p, Function<Field, FieldCodec<?, ?>> fc) {
-			FieldCodecs.addGlobal(p, fc);
+			fcSet.add(p, fc);
 			return this;
 		}
 	}
@@ -110,4 +119,8 @@ public class JdbcEnviron {
 		return upsertUsage;
 	}
 
+	public static FieldCodecSet getFieldCodecSet() {
+	    return fcSet;
+	}
+	
 }

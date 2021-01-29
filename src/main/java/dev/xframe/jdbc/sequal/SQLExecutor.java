@@ -1,6 +1,5 @@
 package dev.xframe.jdbc.sequal;
 
-import static dev.xframe.jdbc.sequal.internal.InternalExecutorFactory.getQueue;
 import static dev.xframe.jdbc.sequal.internal.InternalExecutorFactory.newExecutor;
 
 import java.util.concurrent.ExecutorService;
@@ -62,8 +61,8 @@ public class SQLExecutor {
     		AtomicInteger c = new AtomicInteger(executors.length);
     		Runnable t = completionTask(w, c);
     		for (ExecutorService exec : executors) {
+    		    exec.execute(t);//exec latest task
     			exec.shutdown();
-    			getQueue(exec).offer(t);//offer latest task
     		}
     		LockSupport.park(this);//waiting all tasks completion
     	}

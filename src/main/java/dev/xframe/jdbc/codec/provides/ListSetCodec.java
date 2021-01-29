@@ -53,7 +53,10 @@ public class ListSetCodec<T extends Collection<V>, V> implements FieldCodec<T, S
     }
 
     public static boolean isListOrSet(Field field) {
-        return List.class.isAssignableFrom(field.getType()) || Set.class.isAssignableFrom(field.getType());
+        return isListOrSet(field.getType());
+    }
+    public static boolean isListOrSet(Class<?> type) {
+        return List.class.isAssignableFrom(type) || Set.class.isAssignableFrom(type);
     }
     
     public static <T> FieldCodec<T, String> build(Field field) {

@@ -1,5 +1,6 @@
 package dev.xframe.jdbc.codec.provides;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,6 +46,9 @@ public class EnumCodec implements FieldCodec<Enum<?>, Integer> {
 	    return (V) build(type).decode(code);
 	}
 	
+	public static EnumCodec build(Field field) {
+	    return build(field.getType());
+	}
 	@SuppressWarnings("unchecked")
 	public static EnumCodec build(Class<?> clazz) {
 	    EnumCodec enumCodec = caches.get(clazz);
