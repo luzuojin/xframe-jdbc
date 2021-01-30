@@ -1,22 +1,18 @@
 package dev.xframe.jdbc.sequal.internal;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.AbstractExecutorService;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class SingleThreadExecutor implements ExecutorService {
+public class SingleThreadExecutor extends AbstractExecutorService {
     
     private static final Logger logger = LoggerFactory.getLogger(SingleThreadExecutor.class);
     
@@ -36,6 +32,8 @@ public class SingleThreadExecutor implements ExecutorService {
     private final AtomicInteger state = new AtomicInteger(S_UNSTART);
     
     private final BlockingQueue<Runnable> taskQueue;
+    
+    private final CountDownLatch threadLock = new CountDownLatch(1);
     
     private volatile Thread thread;
 
@@ -121,6 +119,7 @@ public class SingleThreadExecutor implements ExecutorService {
                     runAllTasks();//offerTask已经对外关闭, 继续把不应该出现的任务执行完成
                 }
                 //implemention [wakeup termination await] where
+                threadLock.countDown();
             }
         }
     }
@@ -333,42 +332,11 @@ public class SingleThreadExecutor implements ExecutorService {
     
     @Override
     public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> Future<T> submit(Callable<T> task) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> Future<T> submit(Runnable task, T result) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public Future<?> submit(Runnable task) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks) throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> List<Future<T>> invokeAll(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks) throws InterruptedException, ExecutionException {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public <T> T invokeAny(Collection<? extends Callable<T>> tasks, long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
-        throw new UnsupportedOperationException();
+        if (inExecThread()) {
+            throw new IllegalStateException("Cannot await termination in workder thread");
+        }
+        threadLock.await(timeout, unit);
+        return isTerminated();
     }
 
 }

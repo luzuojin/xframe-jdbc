@@ -3,9 +3,8 @@ package dev.xframe.jdbc.sequal;
 import static dev.xframe.jdbc.sequal.internal.InternalExecutorFactory.newExecutor;
 
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.IntFunction;
 
 public class SQLExecutor {
@@ -54,24 +53,32 @@ public class SQLExecutor {
     private ExecutorService getExecutor(int hashCode) {
         return chooser.apply(hashCode);
     }
-
+    //确保所有任务都处理完成
     public void shutdown() {
     	if(isRunning.compareAndSet(true, false)) {
-    		Thread w = Thread.currentThread();
-    		AtomicInteger c = new AtomicInteger(executors.length);
-    		Runnable t = completionTask(w, c);
     		for (ExecutorService exec : executors) {
-    		    exec.execute(t);//exec latest task
     			exec.shutdown();
     		}
-    		LockSupport.park(this);//waiting all tasks completion
+    		awaitTermination();
     	}
     }
-	private Runnable completionTask(Thread w, AtomicInteger c) {
-		return () -> {
-			if (c.decrementAndGet() == 0) LockSupport.unpark(w);
-		};
-	}
+    private void awaitTermination() {
+        for (ExecutorService exec : executors) {
+            awaitTermination0(exec);
+        }
+    }
+    private void awaitTermination0(ExecutorService exec) {
+        try {
+            boolean terminated = false;
+            do {
+                terminated = exec.awaitTermination(1, TimeUnit.MINUTES);
+            } while(!terminated);
+        } catch (InterruptedException e) {//retry
+            if(!exec.isTerminated()) {
+                awaitTermination0(exec);
+            }
+        }
+    }
     
     public boolean isShutdown() {
         return !isRunning.get();
