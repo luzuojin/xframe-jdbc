@@ -27,7 +27,7 @@ public class Where extends XTypeSQL {
 		return append(new Linker("OR", this));
 	}
 
-	public List<String> placeHolderColumns() {
+	List<String> placeHolderColumns() {
 		List<String> x = new ArrayList<>();
 		linkers.forEach(l->x.addAll(l.placeHolderColumns()));
 		return x;

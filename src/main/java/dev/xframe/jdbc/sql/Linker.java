@@ -52,6 +52,11 @@ public class Linker extends XTypeSQL {
 		return this;
 	}
 	
+	public Linker LIKE(String... columns) {
+	    Arrays.stream(columns).forEach(column->conditions.add(new Condition("LIKE", column, "?")));
+	    return this;
+	}
+	
 	public List<String> placeHolderColumns() {
 		return conditions.stream().filter(c->!c.isPlaceholder()).map(Condition::getColumn).collect(Collectors.toList());
 	}
