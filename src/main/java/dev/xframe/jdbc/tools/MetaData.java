@@ -26,11 +26,13 @@ import dev.xframe.jdbc.datasource.DataSources;
  */
 public class MetaData {
 
-    static DataBase getDataBase(DBConf conf) {
+    public static DataBase getDataBase(DBConf conf) {
         return getDataBase(conf, Collections.emptyList());
     }
-    static DataBase getDataBase(DBConf conf, List<String> tables) {
-    	JdbcTemplate jdbc = new JdbcTemplate(DataSources.tomcatJdbc(conf));
+    public static DataBase getDataBase(DBConf conf, List<String> tables) {
+        return getDatabase(new JdbcTemplate(DataSources.tomcatJdbc(conf)), tables);
+    }
+    public static DataBase getDatabase(JdbcTemplate jdbc, List<String> tables) {
         return jdbc.fetchMany("SHOW TABLES;", PSSetter.NONE, r->r.getString(1)).stream().filter(tablefilter(tables)).map(s->getTable(jdbc, s)).collect(Collector.of(DataBase::new, (d,t)->d.add(t), (d1,d2)->null));
     }
     
@@ -145,7 +147,7 @@ public class MetaData {
             return type == 0;
         }
         public String toName() {
-        	return type == 0 ? "PRIMARY KEY" : "INDEX " + name;
+            return type == 0 ? "PRIMARY KEY" : "INDEX " + name;
         }
         @Override
         public String toString() {
