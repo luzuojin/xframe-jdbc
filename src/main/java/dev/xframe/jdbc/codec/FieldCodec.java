@@ -13,17 +13,17 @@ public interface FieldCodec<F, C> {
     F decode(C columnValue);
     
     default Class<?> getColumnActualType() {
-        return InternalGeneric.get(getClass(), FieldCodec.class, 1);
+        return InternalReflection.getGenericType(getClass(), FieldCodec.class, 1);
     }
 
     public static <F, C> FieldCodec<F, C> ofEncoder(Function<F, C> encoder) {
-        return new CompositFieldCodec<>(encoder, null, InternalGeneric.get(encoder.getClass(), Function.class, 1));
+        return new CompositFieldCodec<>(encoder, null, InternalReflection.getGenericType(encoder.getClass(), Function.class, 1));
     }
     public static <F, C> FieldCodec<F, C> ofDecoder(Function<C, F> decoder) {
-        return new CompositFieldCodec<>(null, decoder, InternalGeneric.get(decoder.getClass(), Function.class, 0));
+        return new CompositFieldCodec<>(null, decoder, InternalReflection.getGenericType(decoder.getClass(), Function.class, 0));
     }
     public static <F, C> FieldCodec<F, C> of(Function<F, C> encoder, Function<C, F> decoder) {
-        return new CompositFieldCodec<>(encoder, decoder, InternalGeneric.get(encoder.getClass(), Function.class, 1));
+        return new CompositFieldCodec<>(encoder, decoder, InternalReflection.getGenericType(encoder.getClass(), Function.class, 1));
     }
     
     static class CompositFieldCodec<F, C> implements FieldCodec<F, C> {

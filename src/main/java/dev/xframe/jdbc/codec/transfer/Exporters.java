@@ -3,6 +3,7 @@ package dev.xframe.jdbc.codec.transfer;
 import java.lang.reflect.Field;
 
 import dev.xframe.jdbc.codec.FieldCodec;
+import dev.xframe.jdbc.codec.InternalReflection;
 
 public class Exporters {
     public static Exporter of(Field field, final int paramIndex) {
@@ -10,50 +11,50 @@ public class Exporters {
     }
     @SuppressWarnings({"rawtypes", "unchecked"})
     public static Exporter of(Field field, final int paramIndex, final FieldCodec fc) {
-        final long fieldOffset = Unsafe.getFieldOffset(field);
+    	InternalReflection.setAccessible(field);
         if(fc != null) {
             return (obj, pstmt) -> {
-                pstmt.setObject(paramIndex, fc.encode(Unsafe.getObject(obj, fieldOffset)));
+                pstmt.setObject(paramIndex, fc.encode(field.get(obj)));
             };
         }
         Class<?> type = field.getType();
         if(type == boolean.class) {
             return (obj, pstmt) -> {
-                pstmt.setBoolean(paramIndex, Unsafe.getBoolean(obj, fieldOffset));
+                pstmt.setBoolean(paramIndex, field.getBoolean(obj));
             };
         }
         if(type == byte.class) {
             return (obj, pstmt) -> {
-                pstmt.setByte(paramIndex, Unsafe.getByte(obj, fieldOffset));
+                pstmt.setByte(paramIndex, field.getByte(obj));
             };
         }
         if(type == short.class) {
             return (obj, pstmt) -> {
-                pstmt.setShort(paramIndex, Unsafe.getShort(obj, fieldOffset));                  
+                pstmt.setShort(paramIndex, field.getShort(obj));                  
             };
         }
         if(type == int.class) {
             return (obj, pstmt) -> {
-                pstmt.setInt(paramIndex, Unsafe.getInt(obj, fieldOffset));                  
+                pstmt.setInt(paramIndex, field.getInt(obj));                  
             };
         }
         if(type == float.class) {
             return (obj, pstmt) -> {
-                pstmt.setFloat(paramIndex, Unsafe.getFloat(obj, fieldOffset));                  
+                pstmt.setFloat(paramIndex, field.getFloat(obj));                  
             };
         }
         if(type == long.class) {
             return (obj, pstmt) -> {
-                pstmt.setLong(paramIndex, Unsafe.getLong(obj, fieldOffset));                  
+                pstmt.setLong(paramIndex, field.getLong(obj));                  
             };
         }
         if(type == double.class) {
             return (obj, pstmt) -> {
-                pstmt.setDouble(paramIndex, Unsafe.getDouble(obj, fieldOffset));
+                pstmt.setDouble(paramIndex, field.getDouble(obj));
             };
         }
         return (obj, pstmt) -> {
-            pstmt.setObject(paramIndex, Unsafe.getObject(obj, fieldOffset));
+            pstmt.setObject(paramIndex, field.get(obj));
         };
     }
 }
