@@ -82,7 +82,7 @@ public class JdbcTemplate {
                 setter.set(pstmt);
             
             rs = pstmt.executeQuery();
-            if(rs.last()) {
+            if(rs.next()) {
                 return parser.parse(wrap(rs));
             }
             return null;
@@ -115,7 +115,7 @@ public class JdbcTemplate {
             pstmt.setObject(1, condParam);
             
             rs = pstmt.executeQuery();
-            if(rs.last()) {
+            if(rs.next()) {
                 return parser.parse(wrap(rs));
             }
             return null;
@@ -223,7 +223,7 @@ public class JdbcTemplate {
             pstmt.execute();
             
             rs = pstmt.getGeneratedKeys();
-            if(rs.last()){
+            if(rs.next()){
                 return rs.getLong(1);
             }
             return -1;
@@ -252,7 +252,7 @@ public class JdbcTemplate {
             pstmt.execute();
             
             rs = pstmt.getGeneratedKeys();
-            if(rs.last()){
+            if(rs.next()){
                 return rs.getLong(1);
             }
             return -1;
@@ -282,7 +282,7 @@ public class JdbcTemplate {
             setter.set(pstmt);
             
             rs = pstmt.executeQuery();
-            if(rs.last()) {
+            if(rs.next()) {
                 return rs.getLong(1);
             }
             return -1;
