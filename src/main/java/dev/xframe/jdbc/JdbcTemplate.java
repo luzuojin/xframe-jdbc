@@ -24,18 +24,29 @@ public class JdbcTemplate {
     private static final Logger logger = LoggerFactory.getLogger(JdbcTemplate.class);
 
     public final DataSource dataSource;
+
     
     /**
-	 * 防止某些异常代码出现 在Debug环境中使用XResultSet代替
+	 * 防止某些异常代码出现 在Debug环境中使用WrappedResultSet代替
 	 */
-	private ResultSet wrap(ResultSet rs) {
-		return logger.isDebugEnabled() ? new WrappedRS(rs) : rs;
-	}
+    public static JdbcTemplate of(DataSource source) {
+        if(logger.isDebugEnabled()) {
+            return new JdbcTemplate(source) {
+                protected ResultSet wrap(ResultSet rs) {
+                    return new WrappedRS(rs);
+                }
+            };
+        }
+        return new JdbcTemplate(source);
+    }
     
+	protected ResultSet wrap(ResultSet rs) {
+		return rs;
+	}
     public JdbcTemplate(DataSource dataSource) {
     	this.dataSource = dataSource;
     }
-    
+
     /**
      * 不处理one/many由RSParser自行处理
      * @param sql

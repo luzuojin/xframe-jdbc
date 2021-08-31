@@ -63,7 +63,7 @@ public class JdbcEnviron {
 		 * @param dataSource
 		 */
 		public EnvironConfigurator setDatasource(DBIdent ident, DataSource dataSource) {
-			jdbcTemplates.put(ident, new JdbcTemplate(dataSource));
+			jdbcTemplates.put(ident, JdbcTemplate.of(dataSource));
 			return this;
 		}
 		
