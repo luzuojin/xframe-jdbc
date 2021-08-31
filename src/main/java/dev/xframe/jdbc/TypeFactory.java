@@ -6,6 +6,11 @@ import java.sql.ResultSet;
 public interface TypeFactory<T> {
     
     /**create instance*/
-    T make(ResultSet rs) throws Exception ;
+    Object make(ResultSet rs) throws Exception;
+    
+    @SuppressWarnings("unchecked")
+    default T resolve(Object obj) throws Exception {
+        return (T) obj;
+    }
 
 }

@@ -1,17 +1,13 @@
 package dev.xframe.jdbc.codec.transfer;
 
-import java.lang.reflect.Field;
-
 import dev.xframe.jdbc.codec.FieldCodec;
-import dev.xframe.jdbc.codec.InternalReflection;
 
 public class Importers {
-    public static Importer of(Field field, final int columnIndex) {
+    public static Importer of(FieldWrap field, final int columnIndex) {
         return of(field, columnIndex, null);
     }
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static Importer of(Field field, final int columnIndex, final FieldCodec fc) {
-    	InternalReflection.setAccessible(field);
+    public static Importer of(FieldWrap field, final int columnIndex, final FieldCodec fc) {
         if(fc != null) {
             return (obj, rs) -> {
                 field.set(obj, fc.decode(rs.getObject(columnIndex)));

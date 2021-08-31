@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 
 import dev.xframe.jdbc.codec.provides.ArrayCodec;
 import dev.xframe.jdbc.codec.provides.ListSetCodec;
+import dev.xframe.utils.XReflection;
 
 public interface FieldCodecSet {
 
@@ -75,10 +76,10 @@ public interface FieldCodecSet {
             add0(f->f.getName().equalsIgnoreCase(name), fc);
         }
         public void add(Function<?, ?> getter, FieldCodec<?, ?> fc) {
-            addByGetterMethod(InternalReflection.getLambdaImplMethod(getter.getClass()), fc);
+            addByGetterMethod((Method) XReflection.getLambdaRefMember(getter.getClass()), fc);
         }
         public void add(Function<?, ?> getter, int delimiters) {//use provided codecs
-            Method method = InternalReflection.getLambdaImplMethod(getter.getClass());
+            Method method = (Method) XReflection.getLambdaRefMember(getter.getClass());
             Class<?> rtype = method.getReturnType();//array or list/set
             addByGetterMethod(method, rtype.isArray() ? ArrayCodec.build(rtype, delimiters) : ListSetCodec.build(rtype, method.getGenericReturnType(), delimiters));
         }
@@ -95,7 +96,7 @@ public interface FieldCodecSet {
         private static String toGetter1(Field field) {
             return "is" + field.getName();
         }
-        private static String toGetter2(Field field) {//isXXX
+        private static String toGetter2(Field field) {//isXXX||xxx()
             return field.getName();
         }
     }

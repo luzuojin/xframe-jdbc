@@ -3,7 +3,6 @@ package dev.xframe.jdbc.builder.analyse;
 import java.util.HashMap;
 import java.util.Map;
 
-import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.codec.FieldCodec;
 
 public class FCodecSet {
@@ -29,21 +28,5 @@ public class FCodecSet {
 	public Map<String, FieldCodec<?, ?>> get() {
 		return codecs;
 	}
-	
-	//for instance
-	private TypeHandler<?> typeFactory;
-    private TypeHandler<?> typeHandler;
-    public TypeHandler<?> getTypeHandler() {
-        return typeHandler;
-    }
-    public void setTypeHandler(TypeHandler<?> typeHandler) {
-        this.typeHandler = typeHandler;
-    }
-    public TypeHandler<?> getTypeFactory() {
-        return typeFactory;
-    }
-    public void setTypeFactory(TypeHandler<?> typeFactory) {
-        this.typeFactory = typeFactory;
-    }
 	
 }

@@ -2,6 +2,8 @@ package dev.xframe.jdbc.codec;
 
 import java.util.function.Function;
 
+import dev.xframe.utils.XGeneric;
+
 /**
  * @author luzj
  * @param <F>
@@ -13,17 +15,17 @@ public interface FieldCodec<F, C> {
     F decode(C columnValue);
     
     default Class<?> getColumnActualType() {
-        return InternalReflection.getGenericType(getClass(), FieldCodec.class, 1);
+        return XGeneric.parse(getClass(), FieldCodec.class).getByIndex(1);
     }
 
     public static <F, C> FieldCodec<F, C> ofEncoder(Function<F, C> encoder) {
-        return new CompositFieldCodec<>(encoder, null, InternalReflection.getGenericType(encoder.getClass(), Function.class, 1));
+        return new CompositFieldCodec<>(encoder, null, XGeneric.parse(encoder.getClass(), Function.class).getByIndex(1));
     }
     public static <F, C> FieldCodec<F, C> ofDecoder(Function<C, F> decoder) {
-        return new CompositFieldCodec<>(null, decoder, InternalReflection.getGenericType(decoder.getClass(), Function.class, 0));
+        return new CompositFieldCodec<>(null, decoder, XGeneric.parse(decoder.getClass(), Function.class).getByIndex(0));
     }
     public static <F, C> FieldCodec<F, C> of(Function<F, C> encoder, Function<C, F> decoder) {
-        return new CompositFieldCodec<>(encoder, decoder, InternalReflection.getGenericType(encoder.getClass(), Function.class, 1));
+        return new CompositFieldCodec<>(encoder, decoder, XGeneric.parse(encoder.getClass(), Function.class).getByIndex(1));
     }
     
     static class CompositFieldCodec<F, C> implements FieldCodec<F, C> {

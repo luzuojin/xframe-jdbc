@@ -56,4 +56,12 @@ public class FTable {
     public boolean hasTypeHandler() {
         return typeHandler != null;
     }
+    @SuppressWarnings("unchecked")
+    public <T> TypeFactory<T> typeFactory() {
+        return (TypeFactory<T>) typeFactory;
+    }
+    @SuppressWarnings("unchecked")
+    public <T> TypeHandler<T> typeHandler() {
+        return (TypeHandler<T>) typeHandler;
+    }
 }
