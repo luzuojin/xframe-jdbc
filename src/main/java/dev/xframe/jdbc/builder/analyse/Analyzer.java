@@ -1,7 +1,6 @@
 package dev.xframe.jdbc.builder.analyse;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -119,70 +118,32 @@ public class Analyzer {
 	}
     
     /**
-     * @param clazz
+     * @param cls
      * @param mappings  JAVA_FIELD_NAME <> DB_COLUMN_NAME
      * @param map 
      * @return
      */
-    private static JTable analyze(Class<?> clazz, Map<String, String> mappings) {
-	    Class<?> orign = clazz;
-    	JTable table = new JTable(clazz);
-    	
-    	while(clazz != null) {
-    	    Method[] methods = clazz.getDeclaredMethods();
-            for (Method method : methods) {
-                String name = method.getName();
-                if((name.startsWith("is") || name.startsWith("get")) && method.getParameterTypes().length == 0) {
-                    table.getter.put(name.toLowerCase(), name);
-                }
-                if(name.startsWith("set") && method.getParameterTypes().length == 1) {
-                    table.setter.put(name.toLowerCase(), name);
-                }
-            }
-    	    
-    		Field[] fields = clazz.getDeclaredFields();
+    private static JTable analyze(Class<?> cls, Map<String, String> mappings) {
+    	JTable table = new JTable(cls);
+    	while(cls != null) {
+    		Field[] fields = cls.getDeclaredFields();
     		for (Field field : fields) {
 				int modifiers = field.getModifiers();
-				if(Modifier.isFinal(modifiers) || Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) {
+				if(Modifier.isStatic(modifiers) || Modifier.isTransient(modifiers)) {
 					continue;
 				}
-				JColumn column = new JColumn();
-				column.field = field;
-				column.name = field.getName();
-				column.type = field.getType();
-				
-				column.setter = analyzeSetter(table, column);
-				column.getter = analyzeGetter(table, column);
-				
-				column.isPrivate = Modifier.isPrivate(modifiers) || (!orign.equals(clazz));
-				
+				JColumn jColumn = new JColumn();
+				jColumn.field = field;
+				jColumn.name = field.getName();
+				jColumn.type = field.getType();
 				//DB_COLUMN_NAME as key
-				table.addJColumn(mappings.get(column.name) == null ? column.name : mappings.get(column.name), column);
+				table.addJColumn(mappings.getOrDefault(jColumn.name, jColumn.name), jColumn);
 			}
-    		
-    		clazz = clazz.getSuperclass();
+    		cls = cls.getSuperclass();
     	}
     	return table;
     }
-	
-    private static String analyzeGetter(JTable table, JColumn column) {
-        String getter = null;
-        if(getter == null) {
-            getter = table.getter.get("get" + column.name.toLowerCase());//getXXX
-        }
-        if(getter == null) {
-            getter = table.getter.get("is" + column.name.toLowerCase());//isXXX
-        }
-        if(getter == null && column.name.startsWith("is")) {   //isX
-            getter = table.getter.get(column.name.toLowerCase());
-        }
-        return getter;
-    }
-
-    private static String analyzeSetter(JTable table, JColumn column) {
-        return table.setter.get("set" + column.name.toLowerCase()); //setXXX
-    }
-
+    
     private static DBTable analyze(JdbcTemplate jdbcTemplate, final String tableName) {
     	if(tableName == null) return null;
     	

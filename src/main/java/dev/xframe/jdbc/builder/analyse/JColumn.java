@@ -11,12 +11,6 @@ public class JColumn {
     public Field field;
 	public String name;
     public Class<?> type;
-    
-    //method name
-    public String getter;
-    public String setter;
-    public boolean isPrivate;
-    
 	@Override
 	public int hashCode() {
 		final int prime = 31;
