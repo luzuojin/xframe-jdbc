@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 import dev.xframe.jdbc.JdbcTemplate;
 import dev.xframe.jdbc.PSSetter;
 import dev.xframe.jdbc.RSParser;
-import dev.xframe.jdbc.codec.FieldCodec;
 import dev.xframe.jdbc.codec.FieldCodecSet;
 
 /**
@@ -42,6 +41,7 @@ public class Analyzer {
     private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecSet fieldCodecs) {
     	FTable fTable = new FTable();
     	fTable.clazz = jtable.clazz;
+    	fTable.fcSet = fieldCodecs;
     	
     	if(dbtable != null) {
     		fTable.tableName = dbtable.tableName;
@@ -101,13 +101,7 @@ public class Analyzer {
     	}
     	
     	for (Map.Entry<String, JColumn> entry : jtable.columns.entrySet()) {
-    		JColumn jcolumn = entry.getValue();
-    		
-    		FieldCodec<?, ?> codec = fieldCodecs.get(jcolumn.field);
-    		if(codec != null)
-    			fTable.codecs.put(jcolumn.name, codec);
-    		
-    		//多出来的java字段, 特殊SQL可能需要用到(多表联合查询)
+    		//多出来的java字段, 特殊SQL可能需要用到(多表联合查询??)
     		String dbcolumname = entry.getKey();
 			if(fTable.columnMap.get(dbcolumname) == null) {
 			    DBColumn dbColumn = dbtable.getDBColumn(dbcolumname);

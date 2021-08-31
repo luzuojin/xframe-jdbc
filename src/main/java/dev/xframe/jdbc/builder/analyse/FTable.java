@@ -7,6 +7,7 @@ import java.util.Map;
 
 import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
+import dev.xframe.jdbc.codec.FieldCodecSet;
 
 /**
  * analyzed final table
@@ -25,7 +26,7 @@ public class FTable {
 	
 	public Map<String, FColumn> columnMap = new HashMap<>();//key column name (lowercase)
 	
-	public FCodecSet codecs = new FCodecSet();
+	public FieldCodecSet fcSet;
 	public TypeHandler<?> typeHandler;
 	public TypeFactory<?> typeFactory;
 	

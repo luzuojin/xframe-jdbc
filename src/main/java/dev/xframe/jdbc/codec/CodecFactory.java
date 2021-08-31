@@ -13,7 +13,6 @@ import dev.xframe.jdbc.RSParser;
 import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypePSSetter;
-import dev.xframe.jdbc.builder.analyse.FCodecSet;
 import dev.xframe.jdbc.builder.analyse.FColumn;
 import dev.xframe.jdbc.builder.analyse.FTable;
 import dev.xframe.jdbc.builder.analyse.JColumn;
@@ -29,9 +28,9 @@ import dev.xframe.utils.XReflection;
 public class CodecFactory {
     
     public static <T> RSParser<T> newParser(FTable ftable, List<FColumn> columns) throws Exception {
-        return newParser(ftable.clazz, ftable.typeFactory(), ftable.typeHandler(), ftable.codecs, columns.stream().map(c->c.jColumn).collect(Collectors.toList()));
+        return newParser(ftable.clazz, ftable.typeFactory(), ftable.typeHandler(), ftable.fcSet, columns.stream().map(c->c.jColumn).collect(Collectors.toList()));
     }
-    public static <T> RSParser<T> newParser(Class<?> cls, TypeFactory<T> tFactory, TypeHandler<T> tHandler, FCodecSet fcSet, List<JColumn> columns) throws Exception {
+    public static <T> RSParser<T> newParser(Class<?> cls, TypeFactory<T> tFactory, TypeHandler<T> tHandler, FieldCodecSet fcSet, List<JColumn> columns) throws Exception {
         if(XReflection.getConstructor(cls) != null) {
             Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
             return new FieldsRSParser<>(tFactory == null ? new DefaultFactory<>(cls) : tFactory, tHandler, fields); 
@@ -56,21 +55,21 @@ public class CodecFactory {
     }
 
     public static <T> TypePSSetter<T> newSetter(FTable ftable, List<FColumn> columns) throws Exception {
-        return newSetter(ftable.codecs, columns.stream().map(c->c.jColumn).collect(Collectors.toList()));
+        return newSetter(ftable.fcSet, columns.stream().map(c->c.jColumn).collect(Collectors.toList()));
     }
-    public static <T> TypePSSetter<T> newSetter(FCodecSet fcSet, List<JColumn> columns) throws Exception {
+    public static <T> TypePSSetter<T> newSetter(FieldCodecSet fcSet, List<JColumn> columns) throws Exception {
         Exporter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeExporter(fcSet, columns.get(i), i+1)).toArray(Exporter[]::new);
         return new FieldsTypePSSetter<>(fields);
     }
 	
-    static Importer makeImporter(FCodecSet fcSet, JColumn c, int columnIndex) {
+    static Importer makeImporter(FieldCodecSet fcSet, JColumn c, int columnIndex) {
         return makeImporter(new FieldWrap.PojoBased(c.field), fcSet, c, columnIndex);
     }
-    static Importer makeImporter(FieldWrap field, FCodecSet fcSet, JColumn c, int columnIndex) {
-        return Importers.of(field, columnIndex, fcSet.get(c.name));
+    static Importer makeImporter(FieldWrap field, FieldCodecSet fcSet, JColumn c, int columnIndex) {
+        return Importers.of(field, columnIndex, fcSet.get(c.field));
     }
-    static Exporter makeExporter(FCodecSet fcSet, JColumn c, int paramIndex) {
-        return Exporters.of(new FieldWrap.PojoBased(c.field), paramIndex, fcSet.get(c.name));
+    static Exporter makeExporter(FieldCodecSet fcSet, JColumn c, int paramIndex) {
+        return Exporters.of(new FieldWrap.PojoBased(c.field), paramIndex, fcSet.get(c.field));
     }
     
     static class DefaultFactory<T> implements TypeFactory<T> {
