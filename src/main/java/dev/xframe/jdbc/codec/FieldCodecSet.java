@@ -57,7 +57,7 @@ public interface FieldCodecSet {
     }
     
     /**手动配置类*/
-    public class Setting implements FieldCodecSet {
+    public class Customized implements FieldCodecSet {
         private Map<Predicate<Field>, FieldCodec<?, ?>> fcs = new HashMap<>();
         private void add0(Predicate<Field> f, FieldCodec<?, ?> fc) {
             fcs.put(f, fc);

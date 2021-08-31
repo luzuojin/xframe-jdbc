@@ -7,6 +7,8 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import dev.xframe.jdbc.RSParser;
+import dev.xframe.jdbc.TypePSSetter;
 import dev.xframe.jdbc.builder.analyse.FColumn;
 import dev.xframe.jdbc.builder.analyse.FTable;
 import dev.xframe.jdbc.codec.CodecFactory;
@@ -29,7 +31,7 @@ public class SQLBuilder {
 	}
     
     public static <T> SQL<T> buildInsertSQL(SQLFactory<T> factory, FTable ftable) throws Exception {
-        return factory.newSQL(Option.INSERT, buildInsertSQLStr(ftable), ftable.batchLimit(ftable.columns.size()), CodecFactory.newSetter(ftable, ftable.columns), null);
+        return factory.newSQL(Option.INSERT, buildInsertSQLStr(ftable), ftable.batchLimit(ftable.columns.size()), newSetter(ftable, ftable.columns), null);
     }
 
 	private static String buildInsertSQLStr(FTable ftable) {
@@ -42,7 +44,7 @@ public class SQLBuilder {
         if(ftable.hasOnlyOneUniqueIndex() && ftable.hasColumnNotInUniqueIndex()) {
             String upt = join(",", ftable.columns.stream().filter(f->!ftable.primaryKeys.contains(f)).map(f->f.dbColumn.quoteName()+"=VALUES("+f.dbColumn.quoteName()+")"));
             String sql = buildInsertSQLStr(ftable) + " ON DUPLICATE KEY UPDATE " + upt;
-            return factory.newSQL(Option.UPSERT, sql.toString(), ftable.batchLimit(ftable.columns.size()), CodecFactory.newSetter(ftable, ftable.columns), null);
+            return factory.newSQL(Option.UPSERT, sql.toString(), ftable.batchLimit(ftable.columns.size()), newSetter(ftable, ftable.columns), null);
         }
         return new NilSQL<>(String.format("Table[%s] unique index is empty or not only", ftable.tableName));
     }
@@ -57,7 +59,7 @@ public class SQLBuilder {
             
             String sql = "UPDATE " + ftable.tableName + " SET " + up + " WHERE " + we;
             
-            return factory.newSQL(Option.UPDATE, sql, ftable.batchLimit(ftable.columns.size() + whereColumns.size()), CodecFactory.newSetter(ftable, fColumns), null);
+            return factory.newSQL(Option.UPDATE, sql, ftable.batchLimit(ftable.columns.size() + whereColumns.size()), newSetter(ftable, fColumns), null);
         }
         return new NilSQL<>(String.format("Table[%s] update option where columns is empty", ftable.tableName));
     }
@@ -78,7 +80,7 @@ public class SQLBuilder {
 	}
     public static <T> SQL<T> buildDeleteSQL(SQLFactory<T> factory, FTable ftable, List<FColumn> whereColumns, BiFunction<FTable, List<FColumn>, String> nativeSQLBuilder) throws Exception {
     	if(!whereColumns.isEmpty()) {
-            return factory.newSQL(Option.DELETE, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), CodecFactory.newSetter(ftable, whereColumns), null);
+            return factory.newSQL(Option.DELETE, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), newSetter(ftable, whereColumns), null);
         }
         return new NilSQL<>(String.format("Table[%s] delete option where columns is empty", ftable.tableName));
     }
@@ -109,7 +111,13 @@ public class SQLBuilder {
     }
     
     public static <T> SQL<T> buildQuerySQL(SQLFactory<T> factory, FTable ftable, List<FColumn> whereColumns, BiFunction<FTable, List<FColumn>, String> nativeSQLBuilder) throws Exception {
-    	return factory.newSQL(Option.SELECT, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), null, CodecFactory.newParser(ftable, ftable.columns));
+    	return factory.newSQL(Option.SELECT, nativeSQLBuilder.apply(ftable, whereColumns), ftable.batchLimit(whereColumns.size()), null, newParser(ftable, ftable.columns));
     }
-
+    
+    public static <T> RSParser<T> newParser(FTable ftable, List<FColumn> columns) throws Exception {
+        return CodecFactory.newParser(ftable.clazz, ftable.typeFactory(), ftable.typeHandler(), ftable.fcSet, columns.stream().map(c->c.jColumn.field).collect(Collectors.toList()));
+    }
+    public static <T> TypePSSetter<T> newSetter(FTable ftable, List<FColumn> columns) throws Exception {
+        return CodecFactory.newSetter(ftable.fcSet, columns.stream().map(c->c.jColumn.field).collect(Collectors.toList()));
+    }
 }

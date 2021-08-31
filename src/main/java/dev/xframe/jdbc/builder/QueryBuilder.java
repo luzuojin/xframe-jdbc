@@ -32,7 +32,7 @@ public class QueryBuilder<T> {
 	protected TypeHandler<T> typeHandler;
 	
 	//field name or class name
-	protected FieldCodecSet.Setting fieldCodecs = new FieldCodecSet.Setting();
+	protected FieldCodecSet.Customized fieldCodecs = new FieldCodecSet.Customized();
 
 	protected Map<String, String> fieldMappings = new HashMap<>();
 

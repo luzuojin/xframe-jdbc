@@ -40,4 +40,8 @@ public class JColumn {
 			return false;
 		return true;
 	}
+    @Override
+    public String toString() {
+        return type.getTypeName() + ":" + name;
+    }
 }

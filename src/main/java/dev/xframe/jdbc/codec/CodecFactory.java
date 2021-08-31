@@ -1,11 +1,13 @@
 package dev.xframe.jdbc.codec;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -13,78 +15,66 @@ import dev.xframe.jdbc.RSParser;
 import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypePSSetter;
-import dev.xframe.jdbc.builder.analyse.FColumn;
-import dev.xframe.jdbc.builder.analyse.FTable;
-import dev.xframe.jdbc.builder.analyse.JColumn;
 import dev.xframe.jdbc.codec.transfer.Exporter;
 import dev.xframe.jdbc.codec.transfer.Exporters;
 import dev.xframe.jdbc.codec.transfer.FieldWrap;
 import dev.xframe.jdbc.codec.transfer.Importer;
 import dev.xframe.jdbc.codec.transfer.Importers;
-import dev.xframe.utils.XCaught;
+import dev.xframe.utils.XLambda;
 import dev.xframe.utils.XReflection;
 
 @SuppressWarnings({"unchecked"})
 public class CodecFactory {
     
-    public static <T> RSParser<T> newParser(FTable ftable, List<FColumn> columns) throws Exception {
-        return newParser(ftable.clazz, ftable.typeFactory(), ftable.typeHandler(), ftable.fcSet, columns.stream().map(c->c.jColumn).collect(Collectors.toList()));
-    }
-    public static <T> RSParser<T> newParser(Class<?> cls, TypeFactory<T> tFactory, TypeHandler<T> tHandler, FieldCodecSet fcSet, List<JColumn> columns) throws Exception {
-        if(XReflection.getConstructor(cls) != null) {
+    public static <T> RSParser<T> newParser(Class<?> cls, TypeFactory<T> tFactory, TypeHandler<T> tHandler, FieldCodecSet fcSet, List<Field> columns) throws Exception {
+        if(XReflection.getConstructor(cls) != null) {//empty paramters constructor
             Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
             return new FieldsRSParser<>(tFactory == null ? new DefaultFactory<>(cls) : tFactory, tHandler, fields); 
-        } else {
-            Constructor<?> constructor = getConstructorByParamsCount(cls, columns.size());
-            if(constructor == null)
-                throw new IllegalArgumentException("Constructor parameters don`t matched columns");
+        } else {//
+            Constructor<?> constructor = findColumnsMatchedConstructor(cls, columns);
             Parameter[] parameters = constructor.getParameters();
             Map<String, Integer> argsIndexMap = IntStream.range(0, parameters.length).mapToObj(Integer::valueOf).collect(Collectors.toMap(i->parameters[i].getName(), i->i));
-            Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(new FieldWrap.ArrayBased(columns.get(i).field.getType(), argsIndexMap.get(columns.get(i).name)), fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
+            Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(new FieldWrap.ArrayBased(columns.get(i).getType(), argsIndexMap.get(columns.get(i).getName())), fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
             return new FieldsRSParser<>(new ArraydFactory<>(cls, constructor.getParameterTypes()), tHandler, fields);
         }
 	}
-    private static Constructor<?> getConstructorByParamsCount(Class<?> cls, int paramsCount) {
+    //暂时只匹配参数数量一致的构造函数
+    private static Constructor<?> findColumnsMatchedConstructor(Class<?> cls, List<Field> columns) {
+        int paramsCount = columns.size();
         Constructor<?>[] constructors = cls.getConstructors();
         for (Constructor<?> constructor : constructors) {
             if(constructor.getParameters().length == paramsCount) {
                 return constructor;
             }
         }
-        return null;
+        throw new IllegalArgumentException(String.format("Columns[%s] matched constructor not found", columns.toString()));
     }
 
-    public static <T> TypePSSetter<T> newSetter(FTable ftable, List<FColumn> columns) throws Exception {
-        return newSetter(ftable.fcSet, columns.stream().map(c->c.jColumn).collect(Collectors.toList()));
-    }
-    public static <T> TypePSSetter<T> newSetter(FieldCodecSet fcSet, List<JColumn> columns) throws Exception {
+    public static <T> TypePSSetter<T> newSetter(FieldCodecSet fcSet, List<Field> columns) throws Exception {
         Exporter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeExporter(fcSet, columns.get(i), i+1)).toArray(Exporter[]::new);
         return new FieldsTypePSSetter<>(fields);
     }
 	
-    static Importer makeImporter(FieldCodecSet fcSet, JColumn c, int columnIndex) {
-        return makeImporter(new FieldWrap.PojoBased(c.field), fcSet, c, columnIndex);
+    static Importer makeImporter(FieldCodecSet fcSet, Field c, int columnIndex) {
+        return makeImporter(new FieldWrap.PojoBased(c), fcSet, c, columnIndex);
     }
-    static Importer makeImporter(FieldWrap field, FieldCodecSet fcSet, JColumn c, int columnIndex) {
-        return Importers.of(field, columnIndex, fcSet.get(c.field));
+    static Importer makeImporter(FieldWrap field, FieldCodecSet fcSet, Field c, int columnIndex) {
+        return Importers.of(field, columnIndex, fcSet.get(c));
     }
-    static Exporter makeExporter(FieldCodecSet fcSet, JColumn c, int paramIndex) {
-        return Exporters.of(new FieldWrap.PojoBased(c.field), paramIndex, fcSet.get(c.field));
+    static Exporter makeExporter(FieldCodecSet fcSet, Field c, int paramIndex) {
+        return Exporters.of(new FieldWrap.PojoBased(c), paramIndex, fcSet.get(c));
     }
     
     static class DefaultFactory<T> implements TypeFactory<T> {
-        private Constructor<T> factory;
+        private Supplier<T> factory;
         public DefaultFactory(Class<?> cls) {
-            try {
-                this.factory = (Constructor<T>) XReflection.getConstructor(cls);
-            } catch (Throwable e) {
-                throw XCaught.throwException(e);
-            }
+            this.factory = XLambda.createByConstructor(cls);
         }
         public Object make(ResultSet rs) throws Exception {
-            return factory.newInstance();
+            return factory.get();
         }
     }
+    
     //使用构造赋值所有属性
     static class ArraydFactory<T> implements TypeFactory<T> {
         private int argsLen;
