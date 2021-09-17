@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Parameter;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -30,26 +31,18 @@ public class CodecFactory {
         if(XReflection.getConstructor(cls) != null) {//empty paramters constructor
             Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
             return new FieldsRSParser<>(tFactory == null ? new DefaultFactory<>(cls) : tFactory, tHandler, fields); 
-        } else {//
-            Constructor<?> constructor = findColumnsMatchedConstructor(cls, columns);
+        } else {
+            //暂时只匹配参数数量一致的构造函数
+            Constructor<?> constructor = Arrays.stream(cls.getConstructors())
+                    .filter(c->c.getParameterCount()==columns.size())
+                    .findAny().orElseThrow(()->new IllegalArgumentException(String.format("Columns[%s] matched constructor not found", columns.toString())));
             Parameter[] parameters = constructor.getParameters();
             Map<String, Integer> argsIndexMap = IntStream.range(0, parameters.length).mapToObj(Integer::valueOf).collect(Collectors.toMap(i->parameters[i].getName(), i->i));
             Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(new FieldWrap.ArrayBased(columns.get(i).getType(), argsIndexMap.get(columns.get(i).getName())), fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
             return new FieldsRSParser<>(new ArraydFactory<>(cls, constructor.getParameterTypes()), tHandler, fields);
         }
 	}
-    //暂时只匹配参数数量一致的构造函数
-    private static Constructor<?> findColumnsMatchedConstructor(Class<?> cls, List<Field> columns) {
-        int paramsCount = columns.size();
-        Constructor<?>[] constructors = cls.getConstructors();
-        for (Constructor<?> constructor : constructors) {
-            if(constructor.getParameters().length == paramsCount) {
-                return constructor;
-            }
-        }
-        throw new IllegalArgumentException(String.format("Columns[%s] matched constructor not found", columns.toString()));
-    }
-
+    
     public static <T> TypePSSetter<T> newSetter(FieldCodecSet fcSet, List<Field> columns) throws Exception {
         Exporter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeExporter(fcSet, columns.get(i), i+1)).toArray(Exporter[]::new);
         return new FieldsTypePSSetter<>(fields);
