@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import dev.xframe.jdbc.JdbcTemplate;
 import dev.xframe.jdbc.PSSetter;
 import dev.xframe.jdbc.RSParser;
+import dev.xframe.jdbc.builder.FieldMapping;
 import dev.xframe.jdbc.codec.FieldCodecSet;
 
 /**
@@ -29,16 +30,17 @@ public class Analyzer {
 	private static final String CONNECT_CLOSE = "关闭连接出错";
     private static final Logger logger = LoggerFactory.getLogger(Analyzer.class);
 
-    public static FTable analyze(Class<?> clazz, String tableName, JdbcTemplate jdbcTemplate, Map<String, String> mappings, FieldCodecSet fieldCodecs) {
-        return analyze(analyze(clazz, mappings), analyze(jdbcTemplate, tableName), fieldCodecs);
+    public static FTable analyze(Class<?> clazz, String tableName, JdbcTemplate jdbcTemplate, FieldCodecSet fieldCodecs, FieldMapping fieldMapper) {
+        return analyze(analyze(clazz), analyze(jdbcTemplate, tableName), fieldCodecs, fieldMapper);
     }
     
     /**
      * 对比双方 去掉多余的属性
      * @param dbtable
      * @param jtable
+     * @param mappings 
      */
-    private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecSet fieldCodecs) {
+    private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecSet fieldCodecs, FieldMapping fieldMapper) {
     	FTable fTable = new FTable();
     	fTable.clazz = jtable.clazz;
     	fTable.fcSet = fieldCodecs;
@@ -47,7 +49,7 @@ public class Analyzer {
     		fTable.tableName = dbtable.tableName;
 
 		    for (DBColumn primaryKey : dbtable.primaryKeys) {
-		        JColumn jcolumn = jtable.getJColumn(primaryKey.name);
+		        JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(primaryKey.name));
 		        if(jcolumn != null) {
 		            fTable.primaryKeys.add(new FColumn(primaryKey, jcolumn));
 		        } else {
@@ -58,7 +60,7 @@ public class Analyzer {
 		    for (DBIndex uniqueIndex : dbtable.uniqueIndexes) {
 		        FIndex fIndex = new FIndex(uniqueIndex.keyNmae, uniqueIndex.nonUnique);
 		        for (DBColumn indexColumn : uniqueIndex.columns) {
-		            JColumn jcolumn = jtable.getJColumn(indexColumn.name);
+		            JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(indexColumn.name));
 		            if(jcolumn != null) {
                         fIndex.columns.add(new FColumn(indexColumn, jcolumn));
                     } else {
@@ -71,7 +73,7 @@ public class Analyzer {
 		    for (DBIndex index : dbtable.indexes) {
 		        FIndex fIndex = new FIndex(index.keyNmae, index.nonUnique);
 		        for (DBColumn indexColumn : index.columns) {
-		            JColumn jcolumn = jtable.getJColumn(indexColumn.name);
+		            JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(indexColumn.name));
 		            if(jcolumn != null) {
 		                fIndex.columns.add(new FColumn(indexColumn, jcolumn));
 		            } else {
@@ -82,7 +84,7 @@ public class Analyzer {
 		    }
 
     		for(String dbcolumnname : dbtable.columns.keySet()) {
-    			JColumn jcolumn = jtable.getJColumn(dbcolumnname);
+    			JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(dbcolumnname));
     			if(jcolumn != null) {
     				FColumn fcolumn = new FColumn(dbtable.getDBColumn(dbcolumnname), jcolumn);
     				fTable.columns.add(fcolumn);
@@ -102,10 +104,10 @@ public class Analyzer {
     	
     	for (Map.Entry<String, JColumn> entry : jtable.columns.entrySet()) {
     		//多出来的java字段, 特殊SQL可能需要用到(多表联合查询??)
-    		String dbcolumname = entry.getKey();
-			if(fTable.columnMap.get(dbcolumname) == null) {
-			    DBColumn dbColumn = dbtable.getDBColumn(dbcolumname);
-				fTable.columnMap.put(dbcolumname, new FColumn(dbColumn, jtable.getJColumn(dbcolumname)));
+    		String fieldName = entry.getKey();
+			if(fTable.columnMap.get(fieldName) == null) {
+			    DBColumn dbColumn = dbtable.getDBColumn(fieldName);
+				fTable.columnMap.put(fieldName, new FColumn(dbColumn, jtable.columns.get(fieldName)));
 			}
 		}
     	return fTable;
@@ -117,7 +119,7 @@ public class Analyzer {
      * @param map 
      * @return
      */
-    private static JTable analyze(Class<?> cls, Map<String, String> mappings) {
+    private static JTable analyze(Class<?> cls) {
     	JTable table = new JTable(cls);
     	while(cls != null) {
     		Field[] fields = cls.getDeclaredFields();
@@ -131,7 +133,7 @@ public class Analyzer {
 				jColumn.name = field.getName();
 				jColumn.type = field.getType();
 				//DB_COLUMN_NAME as key
-				table.addJColumn(mappings.getOrDefault(jColumn.name, jColumn.name), jColumn);
+				table.columns.put(jColumn.name, jColumn);
 			}
     		cls = cls.getSuperclass();
     	}

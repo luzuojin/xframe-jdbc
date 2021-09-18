@@ -1,9 +1,7 @@
 package dev.xframe.jdbc.builder.analyse;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
@@ -24,7 +22,7 @@ public class FTable {
 	public List<FIndex> indexs = new ArrayList<>();
 	public List<FColumn> columns = new ArrayList<>();
 	
-	public Map<String, FColumn> columnMap = new HashMap<>();//key column name (lowercase)
+	public CaseIgnoredMap<FColumn> columnMap = new CaseIgnoredMap<>();//key column name (lowercase)
 	
 	public FieldCodecSet fcSet;
 	public TypeHandler<?> typeHandler;

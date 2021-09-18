@@ -1,8 +1,6 @@
 package dev.xframe.jdbc.builder;
 
 import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Function;
 
 import dev.xframe.jdbc.JdbcEnviron;
@@ -33,8 +31,8 @@ public class QueryBuilder<T> {
 	
 	//field name or class name
 	protected FieldCodecSet.Customized fieldCodecs = new FieldCodecSet.Customized();
-
-	protected Map<String, String> fieldMappings = new HashMap<>();
+	//column name to field name
+	protected FieldMapping.Customized fieldMapping = new FieldMapping.Customized();
 
 	protected int asyncModel = -1;
 	
@@ -64,7 +62,7 @@ public class QueryBuilder<T> {
 	}
 	
 	public QueryBuilder<T> setMapping(String fieldName, String columnName) {
-	    this.fieldMappings.put(fieldName, columnName);
+	    this.fieldMapping.set(fieldName, columnName);
 	    return this;
 	}
 	
@@ -133,7 +131,7 @@ public class QueryBuilder<T> {
 			JdbcTemplate jdbcTemplate = JdbcEnviron.getJdbcTemplate(dbKey);
 			FieldCodecSet fcSet = new FieldCodecSet.Chained(fieldCodecs, JdbcEnviron.getFieldCodecSet());
 			
-            FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fieldMappings, fcSet);
+            FTable ftable = Analyzer.analyze(type, tableName, jdbcTemplate, fcSet, FieldMapping.mixed(fieldMapping));
             ftable.setTypeFactory(typeFactory);
 			ftable.setTypeHandler(typeHandler);
 			

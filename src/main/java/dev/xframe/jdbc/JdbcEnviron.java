@@ -8,6 +8,7 @@ import java.util.function.Predicate;
 
 import javax.sql.DataSource;
 
+import dev.xframe.jdbc.builder.FieldMapping;
 import dev.xframe.jdbc.codec.Delimiters;
 import dev.xframe.jdbc.codec.FieldCodec;
 import dev.xframe.jdbc.codec.FieldCodecSet;
@@ -31,7 +32,7 @@ public class JdbcEnviron {
                                 	        .add(ArrayCodec::isArray, ArrayCodec::build)
                                 	        .add(ListSetCodec::isListOrSet, ListSetCodec::build);
 	
-	static Function<String, String> fieldMapper = Function.identity();
+	static FieldMapping fieldMapping =  c -> c;
 	
 	static SQLExecutor executor;
 	
@@ -78,10 +79,10 @@ public class JdbcEnviron {
 		
 		/**
 		 * global column name & field name mapping
-		 * @param mapper
+		 * @param mapping
 		 */
-		public EnvironConfigurator setFieldMapper(Function<String, String> mapper) {
-			fieldMapper = mapper;
+		public EnvironConfigurator setFieldMapping(FieldMapping mapping) {
+			fieldMapping = mapping;
 			return this;
 		}
 		
@@ -121,6 +122,10 @@ public class JdbcEnviron {
 
 	public static FieldCodecSet getFieldCodecSet() {
 	    return fcSet;
+	}
+	
+	public static FieldMapping getFieldMapping() {
+	    return fieldMapping;
 	}
 	
 }

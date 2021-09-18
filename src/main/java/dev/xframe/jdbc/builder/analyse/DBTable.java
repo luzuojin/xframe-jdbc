@@ -1,9 +1,7 @@
 package dev.xframe.jdbc.builder.analyse;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * db table
@@ -16,14 +14,14 @@ public class DBTable {
 	List<DBIndex> uniqueIndexes;
 	List<DBIndex> indexes;
 	
-	Map<String, DBColumn> columns;
+	CaseIgnoredMap<DBColumn> columns;
 	
 	public DBTable(String name) {
 		this.tableName = name;
-		this.primaryKeys = new ArrayList<DBColumn>();
-		this.uniqueIndexes = new ArrayList<DBIndex>();
-		this.indexes = new ArrayList<DBIndex>();
-		this.columns = new HashMap<String, DBColumn>();
+		this.primaryKeys = new ArrayList<>();
+		this.uniqueIndexes = new ArrayList<>();
+		this.indexes = new ArrayList<>();
+		this.columns = new CaseIgnoredMap<>();
 	}
 	public void addDBIndex(String keyName, boolean nonUnique, DBColumn column) {
 	    if(!nonUnique) {
@@ -48,11 +46,11 @@ public class DBTable {
     }
 	
 	public DBColumn getDBColumn(String columnName) {
-	    return columns.get(columnName.toLowerCase());
+	    return columns.get(columnName);
 	}
 	
 	public void addDBColumn(DBColumn dbColumn) {
-	    this.columns.put(dbColumn.name.toLowerCase(), dbColumn);
+	    this.columns.put(dbColumn.name, dbColumn);
 	}
 	
 }
