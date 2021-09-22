@@ -9,11 +9,9 @@ import java.util.function.IntFunction;
 
 public class SQLExecutor {
     
-    final IntFunction<ExecutorService> chooser;
-    
-    final ExecutorService[] executors;
-    
-    final AtomicBoolean isRunning;
+    private AtomicBoolean isRunning;
+    private ExecutorService[] executors;
+    private IntFunction<ExecutorService> chooser;
     
     public SQLExecutor(int nThreads) {
         this.chooser = newChooser(nThreads);
@@ -21,6 +19,22 @@ public class SQLExecutor {
         this.isRunning = new AtomicBoolean(true);
     }
 
+    public int setThreadsCount(int nThreads) {
+        int exLen = executors.length;
+        if(isRunning.get() && nThreads > exLen) {
+            ExecutorService[] dest = new ExecutorService[nThreads];
+            System.arraycopy(executors, 0, dest, 0, exLen);
+            //grow executors
+            for (int i = exLen; i < dest.length; i++) {
+                dest[i] = newExecutor();
+            }
+            //setup
+            this.executors = dest;
+            this.chooser = newChooser(nThreads);
+        }
+        return exLen;
+    }
+    
 	private IntFunction<ExecutorService> newChooser(int nThreads) {
 		if((nThreads & -nThreads) == nThreads) {//pow of 2
 			final int basis = nThreads - 1;

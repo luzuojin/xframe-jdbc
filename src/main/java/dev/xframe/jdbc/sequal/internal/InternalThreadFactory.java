@@ -9,7 +9,7 @@ public class InternalThreadFactory implements ThreadFactory {
     private AtomicInteger next;
     
     public InternalThreadFactory() {
-        this.group = new ThreadGroup("jdbc-async");
+        this.group = new ThreadGroup("jdbc");
         this.next = new AtomicInteger();
     }
     

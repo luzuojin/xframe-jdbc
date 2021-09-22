@@ -15,11 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import dev.xframe.jdbc.tools.WrappedRS;
+import dev.xframe.utils.XCaught;
 
 public class JdbcTemplate {
 	
-	private static final String EXECUTE_ERROR_TEMPLATE = "执行sql:%s出错, 错误原因:%s";
-    private static final String CONNECT_CLOSE = "关闭连接出错";
+	private static final String EXECUTE_ERROR_TEMPLATE = "Execute sql[%s] error, cause:%s";
+    private static final String CONNECT_CLOSE = "Close connection error";
     
     private static final Logger logger = LoggerFactory.getLogger(JdbcTemplate.class);
 
@@ -72,7 +73,7 @@ public class JdbcTemplate {
             return parser.parse(rs);//不判断RS.next(), 由parser自己控制
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
-            throw new RuntimeException(e);
+            throw XCaught.throwException(e);
         } finally {
             close(conn, pstmt, rs);
             watch(first, second, sql);
@@ -99,7 +100,7 @@ public class JdbcTemplate {
             return null;
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
-            throw new RuntimeException(e);
+            throw XCaught.throwException(e);
         } finally {
             close(conn, pstmt, rs);
             watch(first, second, sql);
@@ -132,7 +133,7 @@ public class JdbcTemplate {
             return null;
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
-            throw new RuntimeException(e);
+            throw XCaught.throwException(e);
         } finally {
             close(conn, pstmt, rs);
             watch(first, second, sql);
@@ -160,7 +161,7 @@ public class JdbcTemplate {
             return ret;
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
-            throw new RuntimeException(e);
+            throw XCaught.throwException(e);
         } finally {
             close(conn, pstmt, rs);
             watch(first, second, sql);
@@ -240,7 +241,7 @@ public class JdbcTemplate {
             return -1;
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
-            throw new RuntimeException(e);
+            throw XCaught.throwException(e);
         } finally {
             close(conn, pstmt, rs);
             watch(first, second, sql);
@@ -269,7 +270,7 @@ public class JdbcTemplate {
             return -1;
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
-            throw new RuntimeException(e);
+            throw XCaught.throwException(e);
         } finally {
             close(conn, pstmt, rs);
             watch(first, second, sql);
@@ -299,7 +300,7 @@ public class JdbcTemplate {
             return -1;
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
-            throw new RuntimeException(e);
+            throw XCaught.throwException(e);
         } finally {
         	close(conn, pstmt, rs);
             watch(first, second, sql);
@@ -470,7 +471,7 @@ public class JdbcTemplate {
         long end = System.currentTimeMillis();      
         long spendTime = end - first;
         if (spendTime > 1000) {
-            logger.warn(String.format("执行语句%s花耗时间总时间 超过:%sms,获取连接：%sms,执行sql:%sms", sql, spendTime, second - first, end - second));
+            logger.warn(String.format("Execute sql[%s] slow, used:%sms, pool:%sms, exec:%sms", sql, spendTime, second - first, end - second));
         }
     }
     
