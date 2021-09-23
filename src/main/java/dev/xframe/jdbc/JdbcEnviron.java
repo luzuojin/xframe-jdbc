@@ -3,6 +3,7 @@ package dev.xframe.jdbc;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -16,6 +17,7 @@ import dev.xframe.jdbc.codec.provides.ArrayCodec;
 import dev.xframe.jdbc.codec.provides.EnumCodec;
 import dev.xframe.jdbc.codec.provides.ListSetCodec;
 import dev.xframe.jdbc.datasource.DBIdent;
+import dev.xframe.jdbc.partition.PartitionStrategy;
 import dev.xframe.jdbc.sequal.SQLExecutor;
 
 public class JdbcEnviron {
@@ -35,6 +37,11 @@ public class JdbcEnviron {
 	static FieldMapping fieldMapping =  c -> c;
 	
 	static SQLExecutor executor;
+	
+	//for partition
+	static PartitionStrategy partitionStrategy = PartitionStrategy.Simulate;
+	//default: tableName_partitionName
+	static BiFunction<String, String, String> partitionTableNameFunc = (t, p) -> String.format("%s_%s", t, p);
 	
 	public static EnvironConfigurator getConfigurator() {
 		return new EnvironConfigurator();
@@ -99,6 +106,23 @@ public class JdbcEnviron {
 			fcSet.add(p, fc);
 			return this;
 		}
+		
+		/**
+		 * parition strategy builtin or simulate
+		 * @param strategy
+		 */
+		public EnvironConfigurator setPartitionStrategy(PartitionStrategy strategy) {
+		    partitionStrategy = strategy;
+		    return this;
+		}
+		/**
+		 * @param strategy
+		 * @param tableNameFunc (simulate partition table name via basic table name and partition name)
+		 */
+		public EnvironConfigurator setPartitionTableFunc(BiFunction<String, String, String> tableNameFunc) {
+		    partitionTableNameFunc = tableNameFunc;
+		    return this;
+		}
 	}
 
 	public static synchronized SQLExecutor getExecutor() {
@@ -128,4 +152,11 @@ public class JdbcEnviron {
 	    return fieldMapping;
 	}
 	
+	public static PartitionStrategy getPartitionStrategy() {
+	    return partitionStrategy;
+	}
+	
+	public static BiFunction<String, String, String> getPartitionTableNameFunc() {
+	    return partitionTableNameFunc;
+	}
 }

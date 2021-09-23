@@ -1,6 +1,7 @@
 package dev.xframe.jdbc.builder;
 
 import java.util.Arrays;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import dev.xframe.jdbc.JdbcEnviron;
@@ -8,15 +9,17 @@ import dev.xframe.jdbc.JdbcTemplate;
 import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypeQuery;
-import dev.xframe.jdbc.TypeQuery.SQLSetter;
 import dev.xframe.jdbc.builder.analyse.Analyzer;
 import dev.xframe.jdbc.builder.analyse.FTable;
 import dev.xframe.jdbc.codec.FieldCodec;
 import dev.xframe.jdbc.codec.FieldCodecSet;
 import dev.xframe.jdbc.datasource.DBIdent;
+import dev.xframe.jdbc.partition.PartitionStrategy;
+import dev.xframe.jdbc.partition.PartitioningQuery;
 import dev.xframe.jdbc.sequal.SQL;
 import dev.xframe.jdbc.sequal.SQLFactory;
 import dev.xframe.jdbc.sql.TypeSQL;
+import dev.xframe.utils.XCaught;
 
 public class QueryBuilder<T> {
 	
@@ -41,7 +44,12 @@ public class QueryBuilder<T> {
 	protected int ignore = 0;
 	
 	protected TypeSQL[] tsqls = new TypeSQL[0];
-
+	
+	//for partition
+	protected PartitionStrategy partitionStrategy;
+	protected Function<T, String> partitionNameFunc;
+	protected BiFunction<String, String, String> partitionTableNameFunc;
+	
 	public QueryBuilder(Class<T> clazz) {
 		this.type = clazz;
 	}
@@ -95,6 +103,19 @@ public class QueryBuilder<T> {
 		return this;
 	}
 	
+	public QueryBuilder<T> setPartitionalFunc(Function<T, String> partitionNameFunc) {
+	    this.partitionNameFunc = partitionNameFunc;
+	    return this;
+	}
+	public QueryBuilder<T> setPartitionalStrategy(PartitionStrategy partitionStrategy) {
+	    this.partitionStrategy = partitionStrategy;
+	    return this;
+	}
+	public QueryBuilder<T> setPartitionalTableFunc(BiFunction<String, String, String> partitionTableNameFunc) {
+	    this.partitionTableNameFunc = partitionTableNameFunc;
+	    return this;
+	}
+	
 	/**
 	 * 1 << 0	insert
 	 * 1 << 1	upsert
@@ -135,24 +156,24 @@ public class QueryBuilder<T> {
             ftable.setTypeFactory(typeFactory);
 			ftable.setTypeHandler(typeHandler);
 			
-			TypeQuery<T> query = new TypeQuery<>();
-			SQLSetter<T> setter = new SQLSetter<>();
-			
 			SQLFactory<T> factory = new SQLFactory<>(isAsyncModel(), jdbcTemplate);
+			
+			TypeQuery<T> query = isPartitional() ? makePartitioningQuery() : new TypeQuery<>();
+			TypeQuery.Setter.setTable(query, tableName);
 			
 			SQL<T> upsert = SQLBuilder.buildUpsertSQL(factory, ftable);
 			if((ignore & (1 << 0)) == 0)
-				setter.setInsert(query, (getUpsertUsage() & 1) > 0 ? upsert : SQLBuilder.buildInsertSQL(factory, ftable));
+			    TypeQuery.Setter.setInsert(query, (getUpsertUsage() & 1) > 0 ? upsert : SQLBuilder.buildInsertSQL(factory, ftable));
 			if((ignore & (1 << 1)) == 0)
-				setter.setUpsert(query, upsert);
+			    TypeQuery.Setter.setUpsert(query, upsert);
 			if((ignore & (1 << 2)) == 0)
-				setter.setUpdate(query, (getUpsertUsage() & 2) > 1 ? upsert : SQLBuilder.buildUpdateSQL(factory, ftable));
+			    TypeQuery.Setter.setUpdate(query, (getUpsertUsage() & 2) > 1 ? upsert : SQLBuilder.buildUpdateSQL(factory, ftable));
 			if((ignore & (1 << 3)) == 0)
-				setter.setDelete(query, SQLBuilder.buildDeleteSQL(factory, ftable));
+			    TypeQuery.Setter.setDelete(query, SQLBuilder.buildDeleteSQL(factory, ftable));
 			if((ignore & (1 << 4)) == 0)
-				setter.setQryKey(query, SQLBuilder.buildQryKeySQL(factory, ftable));
+			    TypeQuery.Setter.setQryKey(query, SQLBuilder.buildQryKeySQL(factory, ftable));
 			if((ignore & (1 << 5)) == 0)
-				setter.setQryAll(query, SQLBuilder.buildQuerySQL(factory, ftable));
+			    TypeQuery.Setter.setQryAll(query, SQLBuilder.buildQuerySQL(factory, ftable));
 			
 			@SuppressWarnings("unchecked")
 			SQL<T>[] xtsqls = new SQL[tsqls.length];
@@ -161,20 +182,30 @@ public class QueryBuilder<T> {
 					xtsqls[i] = tsqls[i].buildSQL(factory, ftable);
 				}
 			}
-			setter.setTSqls(query, xtsqls);
+			TypeQuery.Setter.setTSqls(query, xtsqls);
 			
 			return query;
-		} catch (Throwable e) {QueryBuilder.throwException0(e);}
-		return null;
+		} catch (Throwable e) {
+		    throw XCaught.throwException(e);
+		}
 	}
-	
-    @SuppressWarnings("unchecked")
-    static <E extends Throwable> void throwException0(Throwable e) throws E {
-        throw (E) e;
+
+    private TypeQuery<T> makePartitioningQuery() {
+        PartitionStrategy strategy = orElse(partitionStrategy, JdbcEnviron.getPartitionStrategy());
+        BiFunction<String, String, String> tFunc = strategy == PartitionStrategy.Builtin ?
+                PartitionStrategy.BuiltinTableNameFunc :
+                orElse(partitionTableNameFunc, JdbcEnviron.getPartitionTableNameFunc());
+        return new PartitioningQuery<>(partitionNameFunc, tFunc, strategy == PartitionStrategy.Builtin);
     }
 
+    private boolean isPartitional() {
+        return partitionNameFunc != null;
+    }
 	private boolean isAsyncModel() {
 		return JdbcEnviron.isAsyncModel() && (asyncModel == 1 || asyncModel == -1);
 	}
+	private <X> X orElse(X x, X d) {
+        return x == null ? d : x;
+    }
 
 }

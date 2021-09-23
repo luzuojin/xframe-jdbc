@@ -7,7 +7,7 @@ import dev.xframe.jdbc.PSSetter;
 
 public class NilSQL<T> implements SQL<T> {
 	
-	private String cause;
+	final String cause;
 	
 	public NilSQL(String cause) {
 		this.cause = cause;
