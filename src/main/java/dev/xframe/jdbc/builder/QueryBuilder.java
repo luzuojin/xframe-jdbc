@@ -15,7 +15,6 @@ import dev.xframe.jdbc.codec.FieldCodec;
 import dev.xframe.jdbc.codec.FieldCodecSet;
 import dev.xframe.jdbc.datasource.DBIdent;
 import dev.xframe.jdbc.partition.PartitionStrategy;
-import dev.xframe.jdbc.partition.PartitioningQuery;
 import dev.xframe.jdbc.sequal.SQL;
 import dev.xframe.jdbc.sequal.SQLFactory;
 import dev.xframe.jdbc.sql.TypeSQL;
@@ -189,23 +188,19 @@ public class QueryBuilder<T> {
 		    throw XCaught.throwException(e);
 		}
 	}
-
-    private TypeQuery<T> makePartitioningQuery() {
-        PartitionStrategy strategy = orElse(partitionStrategy, JdbcEnviron.getPartitionStrategy());
-        BiFunction<String, String, String> tFunc = strategy == PartitionStrategy.Builtin ?
-                PartitionStrategy.BuiltinTableNameFunc :
-                orElse(partitionTableNameFunc, JdbcEnviron.getPartitionTableNameFunc());
-        return new PartitioningQuery<>(partitionNameFunc, tFunc, strategy == PartitionStrategy.Builtin);
+	
+	private boolean isAsyncModel() {
+        return JdbcEnviron.isAsyncModel() && (asyncModel == 1 || asyncModel == -1);
     }
 
+    private TypeQuery<T> makePartitioningQuery() {
+        return or(partitionStrategy, JdbcEnviron.getPartitionStrategy())//strategy
+                .makePartitionningQuery(partitionNameFunc, or(partitionTableNameFunc, JdbcEnviron.getPartitionTableNameFunc()));
+    }
     private boolean isPartitional() {
         return partitionNameFunc != null;
     }
-	private boolean isAsyncModel() {
-		return JdbcEnviron.isAsyncModel() && (asyncModel == 1 || asyncModel == -1);
-	}
-	private <X> X orElse(X x, X d) {
+	private <X> X or(X x, X d) {
         return x == null ? d : x;
     }
-
 }
