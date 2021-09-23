@@ -28,6 +28,11 @@ public class PartitionedQeury<T> extends TypeQuery<T> {
         this.tableExists = tableExists;
     }
     
+    @Override
+    public TypeQuery<T> partition(String pName) {
+        return origin.partition(pName);
+    }
+
     private void ensurePartitionedTableExists(JdbcTemplate jdbc) {
         if(tableExists)
             return;
@@ -97,10 +102,9 @@ public class PartitionedQeury<T> extends TypeQuery<T> {
     }
     @Override
     public SQL<T> getSQL(int index) {
-        return (tsqls == null ? (tsqls = makePartitionTSqls()) : tsqls)[index];
+        return (tsqls == null ? (tsqls = makePartitionTSqls(TypeQuery.Getter.getTSqls(origin))) : tsqls)[index];
     }
-    private  SQL<T>[] makePartitionTSqls() {
-        SQL<T>[] src = TypeQuery.Getter.getTSqls(origin);
+    private  SQL<T>[] makePartitionTSqls(SQL<T>[] src) {
         if(src != null) {
             @SuppressWarnings("unchecked")
             SQL<T>[] dst = new SQL[src.length];
