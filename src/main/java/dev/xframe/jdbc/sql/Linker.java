@@ -27,38 +27,43 @@ public class Linker extends XTypeSQL {
 		return where.OR();
 	}
 
+	public Linker PLAIN(String... plains) {
+		Arrays.stream(plains).forEach(plain->conditions.add(new Condition.Plain(plain)));
+		return this;
+	}
+
 	public Linker EQ(String... columns) {
-		Arrays.stream(columns).forEach(column->conditions.add(new Condition("=", column, "?")));
+		Arrays.stream(columns).forEach(column->conditions.add(new Condition.Placeholder("=", column, "?")));
 		return this;
 	}
 	public Linker NEQ(String... columns) {
-		Arrays.stream(columns).forEach(column->conditions.add(new Condition("<>", column, "?")));
+		Arrays.stream(columns).forEach(column->conditions.add(new Condition.Placeholder("<>", column, "?")));
 		return this;
 	}
 	public Linker LESS(String... columns) {
-		Arrays.stream(columns).forEach(column->conditions.add(new Condition("<", column, "?")));
+		Arrays.stream(columns).forEach(column->conditions.add(new Condition.Placeholder("<", column, "?")));
 		return this;
 	}
 	public Linker LESS_EQ(String... columns) {
-		Arrays.stream(columns).forEach(column->conditions.add(new Condition("<=", column, "?")));
+		Arrays.stream(columns).forEach(column->conditions.add(new Condition.Placeholder("<=", column, "?")));
 		return this;
 	}
 	public Linker OVER(String... columns) {
-		Arrays.stream(columns).forEach(column->conditions.add(new Condition(">", column, "?")));
+		Arrays.stream(columns).forEach(column->conditions.add(new Condition.Placeholder(">", column, "?")));
 		return this;
 	}
 	public Linker OVER_EQ(String... columns) {
-		Arrays.stream(columns).forEach(column->conditions.add(new Condition(">=", column, "?")));
+		Arrays.stream(columns).forEach(column->conditions.add(new Condition.Placeholder(">=", column, "?")));
 		return this;
 	}
 	
 	public Linker LIKE(String... columns) {
-	    Arrays.stream(columns).forEach(column->conditions.add(new Condition("LIKE", column, "?")));
+	    Arrays.stream(columns).forEach(column->conditions.add(new Condition.Placeholder("LIKE", column, "?")));
 	    return this;
 	}
 	
 	public List<String> placeHolderColumns() {
-		return conditions.stream().filter(c->!c.isPlaceholder()).map(Condition::getColumn).collect(Collectors.toList());
+		return conditions.stream().filter(Condition::isPlaceholder).map(Condition::getColumn).collect(Collectors.toList());
 	}
 	
 	public String toString() {

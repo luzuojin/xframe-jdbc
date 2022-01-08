@@ -58,7 +58,8 @@ public class JdbcEnviron {
 		}
 		
 		/**
-		 * @param delimiters 
+		 * @param major
+		 * @param minor
 		 * @see @Codec
 		 */
 		public EnvironConfigurator setDelimiters(char major, char minor) {
@@ -67,7 +68,7 @@ public class JdbcEnviron {
 		}
 		
 		/**
-		 * @param key: mark difference datasources
+		 * @param :mark difference datasources
 		 * @param dataSource
 		 */
 		public EnvironConfigurator setDatasource(DBIdent ident, DataSource dataSource) {
@@ -76,7 +77,8 @@ public class JdbcEnviron {
 		}
 		
 		/**
-		 * @param usage: 0 self, 1 insert, 2 update
+		 * @param insert (use upsert instead of insert)
+		 * @param update (use upsert instead of update)
 		 */
 		public EnvironConfigurator setUpsertUsage(boolean insert, boolean update) {
 			upsertUsage += (insert ? 1 : 0);
@@ -116,7 +118,6 @@ public class JdbcEnviron {
 		    return this;
 		}
 		/**
-		 * @param strategy
 		 * @param tableNameFunc (simulate partition table name via basic table name and partition name)
 		 */
 		public EnvironConfigurator setPartitionTableFunc(BiFunction<String, String, String> tableNameFunc) {

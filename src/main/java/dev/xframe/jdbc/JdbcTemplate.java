@@ -154,7 +154,7 @@ public class JdbcTemplate {
                 setter.set(pstmt);
             
             rs = pstmt.executeQuery();
-            List<T> ret = new ArrayList<T>();
+            List<T> ret = new ArrayList<>();
             while(rs.next()) {
                 ret.add(parser.parse(wrap(rs)));
             }
@@ -248,7 +248,7 @@ public class JdbcTemplate {
         }
     }
     
-    public <T> long fetchIncrement(String sql, PSSetter setter) {
+    public long fetchIncrement(String sql, PSSetter setter) {
         long first = System.currentTimeMillis(), second = 0;
         Connection conn = null;
         PreparedStatement pstmt = null;
@@ -416,7 +416,6 @@ public class JdbcTemplate {
         String sql = "{call  " + procedureName + "()}";
         Connection conn = null;
         PreparedStatement pstmt = null;
-        ResultSet rs = null;
         try {
             conn = dataSource.getConnection();
             second = System.currentTimeMillis();
@@ -426,7 +425,7 @@ public class JdbcTemplate {
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
         } finally {
-            close(conn, pstmt, rs);
+            close(conn, pstmt);
             watch(first, second, sql);
         }
         return false;
@@ -457,6 +456,17 @@ public class JdbcTemplate {
 		close(conn);
 	}
 
+	private void close(Connection conn, Statement stmt) {
+		try {
+            if (stmt != null) {
+                stmt.close();
+            }
+        } catch (Exception e) {
+            logger.error(CONNECT_CLOSE, e);
+        }
+		close(conn);
+	}
+
     private void close(Connection conn) {
         try {
             if (conn != null) {
@@ -478,18 +488,18 @@ public class JdbcTemplate {
     public boolean execute(String sql) {
         long first = System.currentTimeMillis(), second = 0;
         Connection conn = null;
-        PreparedStatement pstmt = null;
+        Statement stmt = null;
         try {
             conn = dataSource.getConnection();
             second = System.currentTimeMillis();
             
-            Statement statement = conn.createStatement();
-            int ret = statement.executeUpdate(sql);
+            stmt = conn.createStatement();
+            int ret = stmt.executeUpdate(sql);
             return ret > -1;
         } catch (Exception e) {
             logger.error(String.format(EXECUTE_ERROR_TEMPLATE, sql, e), e);
         } finally {
-            close(conn, pstmt);
+            close(conn, stmt);
             watch(first, second, sql);
         }
         return false;
@@ -500,34 +510,39 @@ public class JdbcTemplate {
         if(sqls == null || sqls.isEmpty()) return false;
         
         Connection conn = null;
-        PreparedStatement pstmt = null;
+        Statement stmt = null;
         boolean success = true;
         try {
             conn = dataSource.getConnection();
             conn.setAutoCommit(false);
             
-            Statement statement = conn.createStatement();
+            stmt = conn.createStatement();
             for (String sql : sqls) {
-                statement.addBatch(sql);
+                stmt.addBatch(sql);
             }
-            int[] rets = statement.executeBatch();
+            int[] rets = stmt.executeBatch();
             for (int ret : rets) {
-                if(ret < 0) success = false;
+                if (ret < 0) {
+                    success = false;
+                    break;
+                }
             }
         } catch (Exception e) {
             success = false;
         } finally {
-            try {
-                if(success) {
-                    conn.commit();
-                } else {
-                    conn.rollback();
+            if(conn != null) {
+                try {
+                    if(success) {
+                        conn.commit();
+                    } else {
+                        conn.rollback();
+                    }
+                    conn.setAutoCommit(true);
+                } catch (Exception ex){
+                    //ignore
                 }
-                conn.setAutoCommit(true);
-            } catch (Exception ex){
-                //ignore
             }
-            close(conn, pstmt);
+            close(conn, stmt);
         }
         return success;
     }

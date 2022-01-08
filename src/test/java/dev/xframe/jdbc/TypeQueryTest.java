@@ -1,18 +1,18 @@
 package dev.xframe.jdbc;
 
-import java.util.Arrays;
-import java.util.List;
-
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import dev.xframe.jdbc.codec.Codec;
 import dev.xframe.jdbc.codec.Delimiters;
 import dev.xframe.jdbc.codec.FieldCodec;
 import dev.xframe.jdbc.datasource.DBIdent;
 import dev.xframe.jdbc.datasource.DBSource;
 import dev.xframe.jdbc.datasource.DataSources;
+import dev.xframe.jdbc.sql.TypeSQL;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class TypeQueryTest implements DBIdent {
     
@@ -72,6 +72,7 @@ public class TypeQueryTest implements DBIdent {
                     .setTable(this, "X_RECORD")
                     .setFieldCodec(XRecord::getxArray, Delimiters.pack(';', '@'))
                     .setFieldCodec(XRecord::getxCust, FieldCodec.of((Short f)->String.valueOf(f), (String c)->Short.valueOf(c)))
+                    .setSQL(0, TypeSQL.where().PLAIN("1=1").orderbyAsc("rand()").limit(0, 1).select())
                     .build();
     }
     

@@ -33,7 +33,7 @@ public class Where extends XTypeSQL {
 		return x;
 	}
 
-	Linker NIL() {
+	Linker FR() {
 		return append(new Linker("", this));
 	}
 

@@ -20,7 +20,7 @@ public class TypeSQL {
 	Ordering ordering;
 	
 	public static Linker where() {
-		return new Where(new TypeSQL()).NIL();
+		return new Where(new TypeSQL()).FR();
 	}
 	
 	void setOrdering(Ordering ordering) {
