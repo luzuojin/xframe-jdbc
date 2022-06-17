@@ -1,14 +1,5 @@
 package dev.xframe.jdbc;
 
-import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.Predicate;
-
-import javax.sql.DataSource;
-
 import dev.xframe.jdbc.builder.FieldMapping;
 import dev.xframe.jdbc.codec.Delimiters;
 import dev.xframe.jdbc.codec.FieldCodec;
@@ -19,6 +10,14 @@ import dev.xframe.jdbc.codec.provides.ListSetCodec;
 import dev.xframe.jdbc.datasource.DBIdent;
 import dev.xframe.jdbc.partition.PartitionStrategy;
 import dev.xframe.jdbc.sequal.SQLExecutor;
+
+import javax.sql.DataSource;
+import java.lang.reflect.Field;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 public class JdbcEnviron {
 	
@@ -72,7 +71,11 @@ public class JdbcEnviron {
 		 * @param dataSource
 		 */
 		public EnvironConfigurator setDatasource(DBIdent ident, DataSource dataSource) {
-			jdbcTemplates.put(ident, JdbcTemplate.of(dataSource));
+			return setJdbcTemplate(ident, JdbcTemplate.of(dataSource));
+		}
+
+		public EnvironConfigurator setJdbcTemplate(DBIdent ident, JdbcTemplate jdbcTemplate) {
+			jdbcTemplates.put(ident, jdbcTemplate);
 			return this;
 		}
 		
