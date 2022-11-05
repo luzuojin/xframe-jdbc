@@ -16,11 +16,11 @@ import dev.xframe.jdbc.RSParser;
 import dev.xframe.jdbc.TypeFactory;
 import dev.xframe.jdbc.TypeHandler;
 import dev.xframe.jdbc.TypePSSetter;
-import dev.xframe.jdbc.codec.transfer.Exporter;
-import dev.xframe.jdbc.codec.transfer.Exporters;
-import dev.xframe.jdbc.codec.transfer.FieldWrap;
-import dev.xframe.jdbc.codec.transfer.Importer;
-import dev.xframe.jdbc.codec.transfer.Importers;
+import dev.xframe.jdbc.codec.transfer.FieldPSSetter;
+import dev.xframe.jdbc.codec.transfer.FieldPSSetters;
+import dev.xframe.jdbc.codec.transfer.FieldInvokder;
+import dev.xframe.jdbc.codec.transfer.FieldRSGetter;
+import dev.xframe.jdbc.codec.transfer.FieldRSGetters;
 import dev.xframe.utils.XLambda;
 import dev.xframe.utils.XReflection;
 
@@ -29,7 +29,7 @@ public class CodecFactory {
     
     public static <T> RSParser<T> newParser(Class<?> cls, TypeFactory<T> tFactory, TypeHandler<T> tHandler, FieldCodecSet fcSet, List<Field> columns) throws Exception {
         if(XReflection.getConstructor(cls) != null) {//empty paramters constructor
-            Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
+            FieldRSGetter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(fcSet, columns.get(i), i+1)).toArray(FieldRSGetter[]::new);
             return new FieldsRSParser<>(tFactory == null ? new DefaultFactory<>(cls) : tFactory, tHandler, fields); 
         } else {
             //暂时只匹配参数数量一致的构造函数
@@ -37,25 +37,25 @@ public class CodecFactory {
                     .filter(c->c.getParameterCount()==columns.size())
                     .findAny().orElseThrow(()->new IllegalArgumentException(String.format("Columns[%s] matched constructor not found", columns.toString())));
             Parameter[] parameters = constructor.getParameters();
-            Map<String, Integer> argsIndexMap = IntStream.range(0, parameters.length).mapToObj(Integer::valueOf).collect(Collectors.toMap(i->parameters[i].getName(), i->i));
-            Importer[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(new FieldWrap.ArrayBased(columns.get(i).getType(), argsIndexMap.get(columns.get(i).getName())), fcSet, columns.get(i), i+1)).toArray(Importer[]::new);
+            Map<String, Integer> argsIndexMap = IntStream.range(0, parameters.length).boxed().collect(Collectors.toMap(i->parameters[i].getName(), i->i));
+            FieldRSGetter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeImporter(new FieldInvokder.ArrayBased(columns.get(i).getType(), argsIndexMap.get(columns.get(i).getName())), fcSet, columns.get(i), i+1)).toArray(FieldRSGetter[]::new);
             return new FieldsRSParser<>(new ArraydFactory<>(cls, constructor.getParameterTypes()), tHandler, fields);
         }
 	}
     
     public static <T> TypePSSetter<T> newSetter(FieldCodecSet fcSet, List<Field> columns) throws Exception {
-        Exporter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeExporter(fcSet, columns.get(i), i+1)).toArray(Exporter[]::new);
+        FieldPSSetter[] fields = IntStream.range(0, columns.size()).mapToObj(i->makeExporter(fcSet, columns.get(i), i+1)).toArray(FieldPSSetter[]::new);
         return new FieldsTypePSSetter<>(fields);
     }
 	
-    static Importer makeImporter(FieldCodecSet fcSet, Field c, int columnIndex) {
-        return makeImporter(new FieldWrap.PojoBased(c), fcSet, c, columnIndex);
+    static FieldRSGetter makeImporter(FieldCodecSet fcSet, Field c, int columnIndex) {
+        return makeImporter(new FieldInvokder.PojoBased(c), fcSet, c, columnIndex);
     }
-    static Importer makeImporter(FieldWrap field, FieldCodecSet fcSet, Field c, int columnIndex) {
-        return Importers.of(field, columnIndex, fcSet.get(c));
+    static FieldRSGetter makeImporter(FieldInvokder field, FieldCodecSet fcSet, Field c, int columnIndex) {
+        return FieldRSGetters.of(field, columnIndex, fcSet.get(c));
     }
-    static Exporter makeExporter(FieldCodecSet fcSet, Field c, int paramIndex) {
-        return Exporters.of(new FieldWrap.PojoBased(c), paramIndex, fcSet.get(c));
+    static FieldPSSetter makeExporter(FieldCodecSet fcSet, Field c, int paramIndex) {
+        return FieldPSSetters.of(new FieldInvokder.PojoBased(c), paramIndex, fcSet.get(c));
     }
     
     static class DefaultFactory<T> implements TypeFactory<T> {
@@ -87,16 +87,16 @@ public class CodecFactory {
 	static class FieldsRSParser<T> implements RSParser<T> {
 	    final TypeFactory<T> factory;
 		final TypeHandler<T> handler;
-		final Importer[] fields;
-		public FieldsRSParser(TypeFactory<T> factory, TypeHandler<T> handler, Importer[] fields) {
+		final FieldRSGetter[] fields;
+		public FieldsRSParser(TypeFactory<T> factory, TypeHandler<T> handler, FieldRSGetter[] fields) {
 		    this.factory = factory;
 			this.handler = handler;
 			this.fields = fields;
 		}
 		public T parse(ResultSet rs) throws Exception {
 			Object o = factory.make(rs);
-			for (Importer field : fields) {
-                field.imports(o, rs);
+			for (FieldRSGetter field : fields) {
+                field.apply(o, rs);
             }
 			T t = factory.resolve(o);
 			if(handler != null) 
@@ -106,13 +106,13 @@ public class CodecFactory {
 	}
 	
 	static class FieldsTypePSSetter<T> implements TypePSSetter<T> {
-		final Exporter[] fields;
-		public FieldsTypePSSetter(Exporter[] fields) {
+		final FieldPSSetter[] fields;
+		public FieldsTypePSSetter(FieldPSSetter[] fields) {
 			this.fields = fields;
 		}
 		public void set(PreparedStatement pstmt, T obj) throws Exception {
-		    for (Exporter field : fields) {
-                field.exports(obj, pstmt);
+		    for (FieldPSSetter field : fields) {
+                field.apply(obj, pstmt);
             }
 		}
 	}

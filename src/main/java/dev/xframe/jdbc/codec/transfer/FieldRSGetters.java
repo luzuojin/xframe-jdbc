@@ -2,12 +2,12 @@ package dev.xframe.jdbc.codec.transfer;
 
 import dev.xframe.jdbc.codec.FieldCodec;
 
-public class Importers {
-    public static Importer of(FieldWrap field, final int columnIndex) {
+public class FieldRSGetters {
+    public static FieldRSGetter of(FieldInvokder field, final int columnIndex) {
         return of(field, columnIndex, null);
     }
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static Importer of(FieldWrap field, final int columnIndex, final FieldCodec fc) {
+    public static FieldRSGetter of(FieldInvokder field, final int columnIndex, final FieldCodec fc) {
         if(fc != null) {
             return (obj, rs) -> {
                 field.set(obj, fc.decode(rs.getObject(columnIndex)));

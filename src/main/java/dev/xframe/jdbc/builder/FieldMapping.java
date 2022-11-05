@@ -18,7 +18,7 @@ public interface FieldMapping {
      * @param columnName
      * @return
      */
-    public String apply(String columnName);
+    String apply(String columnName);
     
     /**
      * 合并
@@ -27,7 +27,7 @@ public interface FieldMapping {
      * @param cMapping
      * @return
      */
-    public static FieldMapping mixed(FieldMapping.Customized cMapping) {
+    static FieldMapping mixed(FieldMapping.Customized cMapping) {
         final FieldMapping gMapping = JdbcEnviron.getFieldMapping();
         return columnName -> {
             String rName = null;
@@ -49,7 +49,7 @@ public interface FieldMapping {
      * 针对单个字段进行的配置
      * @author luzj
      */
-    public static class Customized implements FieldMapping {
+    class Customized implements FieldMapping {
         private List<String[]> customized = new LinkedList<>();
         public void set(String fieldName, String columnName) {
             customized.add(new String[] {fieldName, columnName});

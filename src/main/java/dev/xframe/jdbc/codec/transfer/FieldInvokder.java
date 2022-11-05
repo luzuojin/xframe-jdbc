@@ -5,7 +5,7 @@ import java.lang.reflect.Field;
 
 import dev.xframe.utils.XReflection;
 
-public interface FieldWrap {
+public interface FieldInvokder {
     
     Class<?> getType();
     
@@ -29,7 +29,7 @@ public interface FieldWrap {
     float getFloat(Object obj) throws Exception;
     double getDouble(Object obj) throws Exception;
     
-    static class PojoBased implements FieldWrap {
+    class PojoBased implements FieldInvokder {
         private final Field field;
         public PojoBased(Field field) {
             XReflection.setAccessible(field);
@@ -94,7 +94,7 @@ public interface FieldWrap {
         }
     }
     
-    static class ArrayBased implements FieldWrap {
+    class ArrayBased implements FieldInvokder {
         private final Class<?> type;
         private final int index;
         public ArrayBased(Class<?> type, int index) {

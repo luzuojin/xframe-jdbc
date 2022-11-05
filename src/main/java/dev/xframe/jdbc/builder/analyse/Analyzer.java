@@ -38,9 +38,9 @@ public class Analyzer {
      * 对比双方 去掉多余的属性
      * @param dbtable
      * @param jtable
-     * @param mappings 
+     * @param mapping
      */
-    private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecSet fieldCodecs, FieldMapping fieldMapper) {
+    private static FTable analyze(JTable jtable, DBTable dbtable, FieldCodecSet fieldCodecs, FieldMapping mapping) {
     	FTable fTable = new FTable();
     	fTable.clazz = jtable.clazz;
     	fTable.fcSet = fieldCodecs;
@@ -49,7 +49,7 @@ public class Analyzer {
     		fTable.tableName = dbtable.tableName;
 
 		    for (DBColumn primaryKey : dbtable.primaryKeys) {
-		        JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(primaryKey.name));
+		        JColumn jcolumn = jtable.getJColumn(mapping.apply(primaryKey.name));
 		        if(jcolumn != null) {
 		            fTable.primaryKeys.add(new FColumn(primaryKey, jcolumn));
 		        } else {
@@ -60,7 +60,7 @@ public class Analyzer {
 		    for (DBIndex uniqueIndex : dbtable.uniqueIndexes) {
 		        FIndex fIndex = new FIndex(uniqueIndex.keyNmae, uniqueIndex.nonUnique);
 		        for (DBColumn indexColumn : uniqueIndex.columns) {
-		            JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(indexColumn.name));
+		            JColumn jcolumn = jtable.getJColumn(mapping.apply(indexColumn.name));
 		            if(jcolumn != null) {
                         fIndex.columns.add(new FColumn(indexColumn, jcolumn));
                     } else {
@@ -73,7 +73,7 @@ public class Analyzer {
 		    for (DBIndex index : dbtable.indexes) {
 		        FIndex fIndex = new FIndex(index.keyNmae, index.nonUnique);
 		        for (DBColumn indexColumn : index.columns) {
-		            JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(indexColumn.name));
+		            JColumn jcolumn = jtable.getJColumn(mapping.apply(indexColumn.name));
 		            if(jcolumn != null) {
 		                fIndex.columns.add(new FColumn(indexColumn, jcolumn));
 		            } else {
@@ -84,7 +84,7 @@ public class Analyzer {
 		    }
 
     		for(String dbcolumnname : dbtable.columns.keySet()) {
-    			JColumn jcolumn = jtable.getJColumn(fieldMapper.apply(dbcolumnname));
+    			JColumn jcolumn = jtable.getJColumn(mapping.apply(dbcolumnname));
     			if(jcolumn != null) {
     				FColumn fcolumn = new FColumn(dbtable.getDBColumn(dbcolumnname), jcolumn);
     				fTable.columns.add(fcolumn);
@@ -94,12 +94,7 @@ public class Analyzer {
     			}
     		}
 
-    		Collections.sort(fTable.columns, new Comparator<FColumn>() {
-    			@Override
-    			public int compare(FColumn o1, FColumn o2) {
-    				return o1.dbColumn.index - o2.dbColumn.index;
-    			}
-    		});
+    		fTable.columns.sort(Comparator.comparingInt((FColumn o) -> o.dbColumn.index));
     	}
     	
     	for (Map.Entry<String, JColumn> entry : jtable.columns.entrySet()) {
@@ -115,8 +110,6 @@ public class Analyzer {
     
     /**
      * @param cls
-     * @param mappings  JAVA_FIELD_NAME <> DB_COLUMN_NAME
-     * @param map 
      * @return
      */
     private static JTable analyze(Class<?> cls) {
@@ -168,7 +161,7 @@ public class Analyzer {
             while(primaryKeys.next()) {
             	table.primaryKeys.add(table.getDBColumn(primaryKeys.getString("COLUMN_NAME")).withPKSEQ(primaryKeys.getInt("KEY_SEQ")));
             }
-            Collections.sort(table.primaryKeys, (k1, k2)->Integer.compare(k1.pkSEQ, k2.pkSEQ));
+            table.primaryKeys.sort(Comparator.comparingInt(k -> k.pkSEQ));
             ResultSet uniqueIndexs = conn.getMetaData().getIndexInfo(conn.getCatalog(), conn.getSchema(), tableName, false, false);
             while(uniqueIndexs.next()) {
                 table.addDBIndex(uniqueIndexs.getString("INDEX_NAME"), uniqueIndexs.getBoolean("NON_UNIQUE"), table.getDBColumn(uniqueIndexs.getString("COLUMN_NAME")));

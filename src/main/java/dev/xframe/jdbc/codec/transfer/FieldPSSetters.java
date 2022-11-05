@@ -2,12 +2,12 @@ package dev.xframe.jdbc.codec.transfer;
 
 import dev.xframe.jdbc.codec.FieldCodec;
 
-public class Exporters {
-    public static Exporter of(FieldWrap field, final int paramIndex) {
+public class FieldPSSetters {
+    public static FieldPSSetter of(FieldInvokder field, final int paramIndex) {
         return of(field, paramIndex, null);
     }
     @SuppressWarnings({"rawtypes", "unchecked"})
-    public static Exporter of(FieldWrap field, final int paramIndex, final FieldCodec fc) {
+    public static FieldPSSetter of(FieldInvokder field, final int paramIndex, final FieldCodec fc) {
         if(fc != null) {
             return (obj, pstmt) -> {
                 pstmt.setObject(paramIndex, fc.encode(field.get(obj)));
@@ -41,7 +41,7 @@ public class Exporters {
         }
         if(type == long.class) {
             return (obj, pstmt) -> {
-                pstmt.setLong(paramIndex, field.getLong(obj));                  
+                pstmt.setLong(paramIndex, field.getLong(obj));
             };
         }
         if(type == double.class) {
