@@ -2,6 +2,10 @@ package dev.xframe.jdbc.codec.transfer;
 
 import dev.xframe.jdbc.codec.FieldCodec;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+
 public class FieldRSGetters {
     public static FieldRSGetter of(FieldInvokder field, final int columnIndex) {
         return of(field, columnIndex, null);
@@ -47,6 +51,22 @@ public class FieldRSGetters {
         if(type == double.class) {
             return (obj, rs) -> {
                 field.setDouble(obj, rs.getDouble(columnIndex));
+            };
+        }
+        //兼容 java.util.time
+        if(type == LocalDateTime.class) {
+            return (obj, rs) -> {
+                field.set(obj, rs.getTimestamp(columnIndex).toLocalDateTime());
+            };
+        }
+        if(type == LocalDate.class) {
+            return (obj, rs) -> {
+                field.set(obj, rs.getDate(columnIndex).toLocalDate());
+            };
+        }
+        if(type == LocalTime.class) {
+            return (obj, rs) -> {
+                field.set(obj, rs.getTime(columnIndex).toLocalTime());
             };
         }
         return (obj, rs) -> {
