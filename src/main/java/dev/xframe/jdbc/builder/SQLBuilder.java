@@ -1,12 +1,6 @@
 package dev.xframe.jdbc.builder;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.BiFunction;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
-
+import dev.xframe.jdbc.JdbcEnviron;
 import dev.xframe.jdbc.RSParser;
 import dev.xframe.jdbc.TypePSSetter;
 import dev.xframe.jdbc.builder.analyse.FColumn;
@@ -16,6 +10,13 @@ import dev.xframe.jdbc.sequal.NilSQL;
 import dev.xframe.jdbc.sequal.SQL;
 import dev.xframe.jdbc.sequal.SQL.Option;
 import dev.xframe.jdbc.sequal.SQLFactory;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 /**
@@ -31,31 +32,34 @@ public class SQLBuilder {
 	}
     
     public static <T> SQL<T> buildInsertSQL(SQLFactory<T> factory, FTable ftable) throws Exception {
-        return factory.newSQL(Option.INSERT, buildInsertSQLStr(ftable), ftable.batchLimit(ftable.columns.size()), newSetter(ftable, ftable.columns), null);
+        //insert sql ignore auto increment columns
+        List<FColumn> columns = JdbcEnviron.getInsertIgnoreAutoIncrementColumns() ?
+                ftable.columns.stream().filter(c -> !c.dbColumn.isAutoIncrement).collect(Collectors.toList()) : ftable.columns;
+        return factory.newSQL(Option.INSERT, buildInsertSQLStr(ftable, columns), ftable.batchLimit(columns.size()), newSetter(ftable, columns), null);
     }
 
-	private static String buildInsertSQLStr(FTable ftable) {
-        String insertPre = join(",", ftable.columns.stream().map(f->f.dbColumn.quoteName()));
-        String insertEnd = join(",", ftable.columns.stream().map(f->"?"));
+	private static String buildInsertSQLStr(FTable ftable, List<FColumn> columns) {
+        String insertPre = join(",", columns.stream().map(f->f.dbColumn.quoteName()));
+        String insertEnd = join(",", columns.stream().map(f->"?"));
         return "INSERT INTO " + ftable.tableName + " (" + insertPre + ") VALUES (" + insertEnd + ")";
 	}
     
 	public static <T> SQL<T> buildUpsertSQL(SQLFactory<T> factory, FTable ftable) throws Exception {
         if(ftable.hasOnlyOneUniqueIndex() && ftable.hasColumnNotInUniqueIndex()) {
             String upt = join(",", ftable.columns.stream().filter(f->!ftable.primaryKeys.contains(f)).map(f->f.dbColumn.quoteName()+"=VALUES("+f.dbColumn.quoteName()+")"));
-            String sql = buildInsertSQLStr(ftable) + " ON DUPLICATE KEY UPDATE " + upt;
-            return factory.newSQL(Option.UPSERT, sql.toString(), ftable.batchLimit(ftable.columns.size()), newSetter(ftable, ftable.columns), null);
+            String sql = buildInsertSQLStr(ftable, ftable.columns) + " ON DUPLICATE KEY UPDATE " + upt;
+            return factory.newSQL(Option.UPSERT, sql, ftable.batchLimit(ftable.columns.size()), newSetter(ftable, ftable.columns), null);
         }
         return new NilSQL<>(String.format("Table[%s] unique index is empty or not only", ftable.tableName));
     }
     
     public static <T> SQL<T> buildUpdateSQL(SQLFactory<T> factory, FTable ftable, List<FColumn> whereColumns) throws Exception {
         if(!whereColumns.isEmpty()) {
-            List<FColumn> fColumns = new ArrayList<FColumn>();
+            List<FColumn> fColumns = new ArrayList<>();
 
-            String up = join(",", ftable.columns.stream().filter(f->!whereColumns.contains(f)).peek(f->fColumns.add(f)).map(c->c.dbColumn.quoteAssignName()));
+            String up = join(",", ftable.columns.stream().filter(f->!whereColumns.contains(f)).peek(fColumns::add).map(c->c.dbColumn.quoteAssignName()));
             
-            String we = join(" AND ", whereColumns.stream().peek(f->fColumns.add(f)).map(f->f.dbColumn.quoteAssignName()));
+            String we = join(" AND ", whereColumns.stream().peek(fColumns::add).map(f->f.dbColumn.quoteAssignName()));
             
             String sql = "UPDATE " + ftable.tableName + " SET " + up + " WHERE " + we;
             
@@ -86,7 +90,7 @@ public class SQLBuilder {
     }
 
 	private static String joinColumnsToCondStr(List<FColumn> columns) {
-		return String.join(" AND ", columns.stream().map(f->f.dbColumn.quoteAssignName()).collect(Collectors.toList()));
+		return columns.stream().map(f->f.dbColumn.quoteAssignName()).collect(Collectors.joining(" AND "));
 	}
     
     @SuppressWarnings("unchecked")

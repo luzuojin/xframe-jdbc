@@ -9,7 +9,8 @@ public class DBColumn {
     public String name;
     public int index;
     public int type;
-    
+	public boolean isAutoIncrement;
+
 	public String quoteName() {
 	    return "`" + name + "`";
 	}

@@ -26,6 +26,8 @@ public class JdbcEnviron {
 	static Map<DBIdent, JdbcTemplate> jdbcTemplates = new HashMap<>();
 	
 	static int upsertUsage;
+
+	static boolean insertIgnoreAutoIncrementColumns = false;
 	
 	//默认支持: Enum(@Codec),Array,List,Set
 	static FieldCodecSet.Typed fcSet = new FieldCodecSet.Typed()
@@ -88,6 +90,14 @@ public class JdbcEnviron {
 			upsertUsage += (update ? 2 : 0);
 			return this;
 		}
+
+		/**
+		 * @param value
+		 */
+		public EnvironConfigurator setInsertIgnoreAutoIncrementColumns(boolean value) {
+			insertIgnoreAutoIncrementColumns = value;
+			return this;
+		}
 		
 		/**
 		 * global column name & field name mapping
@@ -146,6 +156,10 @@ public class JdbcEnviron {
 
 	public static int getUpsertUsage() {
 		return upsertUsage;
+	}
+
+	public static boolean getInsertIgnoreAutoIncrementColumns() {
+		return insertIgnoreAutoIncrementColumns;
 	}
 
 	public static FieldCodecSet getFieldCodecSet() {

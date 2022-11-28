@@ -1,23 +1,21 @@
 package dev.xframe.jdbc.builder.analyse;
 
+import dev.xframe.jdbc.JdbcTemplate;
+import dev.xframe.jdbc.PSSetter;
+import dev.xframe.jdbc.RSParser;
+import dev.xframe.jdbc.builder.FieldMapping;
+import dev.xframe.jdbc.codec.FieldCodecSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import dev.xframe.jdbc.JdbcTemplate;
-import dev.xframe.jdbc.PSSetter;
-import dev.xframe.jdbc.RSParser;
-import dev.xframe.jdbc.builder.FieldMapping;
-import dev.xframe.jdbc.codec.FieldCodecSet;
 
 /**
  * 
@@ -148,6 +146,7 @@ public class Analyzer {
 	            	column.index = i;
 	            	column.name = rsmd.getColumnLabel(i);
 	            	column.type = rsmd.getColumnType(i);
+					column.isAutoIncrement = rsmd.isAutoIncrement(i);
 					table.addDBColumn(column);
 				}
 				return table;
