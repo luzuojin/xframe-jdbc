@@ -2,9 +2,13 @@ package dev.xframe.jdbc.codec.transfer;
 
 import dev.xframe.jdbc.codec.FieldCodec;
 
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.function.Function;
 
 public class FieldRSGetters {
     public static FieldRSGetter of(FieldInvokder field, final int columnIndex) {
@@ -56,21 +60,25 @@ public class FieldRSGetters {
         //兼容 java.util.time
         if(type == LocalDateTime.class) {
             return (obj, rs) -> {
-                field.set(obj, rs.getTimestamp(columnIndex).toLocalDateTime());
+                field.set(obj, map(rs.getTimestamp(columnIndex), Timestamp::toLocalDateTime));
             };
         }
         if(type == LocalDate.class) {
             return (obj, rs) -> {
-                field.set(obj, rs.getDate(columnIndex).toLocalDate());
+                field.set(obj, map(rs.getDate(columnIndex), Date::toLocalDate));
             };
         }
         if(type == LocalTime.class) {
             return (obj, rs) -> {
-                field.set(obj, rs.getTime(columnIndex).toLocalTime());
+                field.set(obj, map(rs.getTime(columnIndex), Time::toLocalTime));
             };
         }
         return (obj, rs) -> {
             field.set(obj, rs.getObject(columnIndex));
         };
+    }
+
+    static <T, R> R map(T t, Function<T, R> func) {
+        return t == null ? null : func.apply(t);
     }
 }
